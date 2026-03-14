@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { 
   Menu, Search, Plus, Map as MapIcon, Globe, Unlock, X, 
-  MapPin, BookOpen, Coffee, Car, Microscope
+  MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
+  AlertTriangle, Trash2
 } from 'lucide-react';
 import mapImage from '../assets/mapa_universidad.jpeg';
 import { supabase } from '../lib/supabase';
@@ -15,6 +16,23 @@ export default function Dashboard() {
   const [markerMode, setMarkerMode] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [newPinPos, setNewPinPos] = useState(null);
+  const [selectedPin, setSelectedPin] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Modals state
+  const [showMakePublicModal, setShowMakePublicModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  // Make Public Form State
+  const [hasSchedule, setHasSchedule] = useState(false);
+  const [openTime, setOpenTime] = useState('');
+  const [closeTime, setCloseTime] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [availableDays, setAvailableDays] = useState(['L', 'M', 'Mi', 'J', 'V']);
+  const [pinCategory, setPinCategory] = useState('Académico');
+
+  // Report Form State
+  const [reportReason, setReportReason] = useState('');
   
   const [userPins, setUserPins] = useState([]);
   
@@ -25,7 +43,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchPins();
+    fetchUser();
   }, [activeFilter]);
+
+  const fetchUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setCurrentUser(session?.user || null);
+  };
 
   const fetchPins = async () => {
     try {
@@ -195,7 +219,7 @@ export default function Dashboard() {
                   color: selectedColor,
                   x_coordinate: newPinPos.x,
                   y_coordinate: newPinPos.y,
-                  is_public: true
+                  is_public: false // New pins are private by default
                 };
 
                 const { data, error } = await supabase
@@ -301,14 +325,14 @@ export default function Dashboard() {
       >
         <TransformWrapper
           initialScale={0.8}
-          minScale={0.2}
-          maxScale={4}
+          minScale={0.8}
+          maxScale={3}
           centerOnInit={true}
           centerZoomedOut={true}
-          limitToBounds={false}
+          limitToBounds={true}
           disabled={markerMode}
         >
-          <TransformComponent wrapperClass="map-wrapper">
+          <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <img 
                 src={mapImage} 
@@ -319,10 +343,16 @@ export default function Dashboard() {
             {[...pins, ...userPins].map(pin => (
               <div 
                 key={pin.id} 
-                className="map-pin"
+                className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
                 style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color, boxShadow: `0 4px 12px ${pin.color}40` }}
                 title={pin.name || 'Pin'}
+                onClick={(e) => {
+                  e.stopPropagation(); // Avoid triggering map click
+                  setSelectedPin(pin);
+                  setMarkerMode(false);
+                }}
               >
+                <div className="pin-tooltip">{pin.name}</div>
                 {renderPinIcon(pin.icon, pin.color)}
               </div>
             ))}
@@ -330,6 +360,178 @@ export default function Dashboard() {
           </TransformComponent>
         </TransformWrapper>
       </div>
+
+      {/* Pin Details Modal (Bottom Sheet) */}
+      {selectedPin && (
+        <div className="pin-details-sheet">
+          <button className="close-sheet-btn" onClick={() => setSelectedPin(null)}>
+            <X size={16} />
+          </button>
+          
+          <div className="sheet-header">
+            <h3>{selectedPin.name}</h3>
+            <span className="sheet-subtitle">Centro Universitario de los Altos</span>
+          </div>
+
+          <div className="sheet-stats">
+            <div className="stat-box">
+              <span className="stat-label">DISTANCIA</span>
+              <span className="stat-value">350 m</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">TIEMPO</span>
+              <span className="stat-value">5 min</span>
+            </div>
+          </div>
+
+          <div className="sheet-actions-secondary">
+            {/* If the user owns the pin */}
+            {currentUser && selectedPin.user_id === currentUser.id ? (
+              <>
+                {!selectedPin.is_public && (
+                  <button className="btn-secondary btn-public" onClick={() => setShowMakePublicModal(true)}>
+                    <Globe size={14} /> Hacer Público
+                  </button>
+                )}
+                <button className="btn-secondary btn-danger" onClick={async () => {
+                  if(window.confirm('¿Seguro que quieres borrar este pin?')) {
+                    await supabase.from('pins').delete().eq('id', selectedPin.id);
+                    setUserPins(userPins.filter(p => p.id !== selectedPin.id));
+                    setSelectedPin(null);
+                  }
+                }}>
+                  <Trash2 size={14} /> Borrar Pin
+                </button>
+              </>
+            ) : (
+              /* If it's a public pin not owned by the user */
+              <button className="btn-secondary btn-danger" onClick={() => setShowReportModal(true)}>
+                <AlertTriangle size={14} /> Reportar Pin
+              </button>
+            )}
+          </div>
+
+          <button className="btn-primary-large">
+            <Route size={16} /> Iniciar Recorrido
+          </button>
+        </div>
+      )}
+      {/* MAKE PUBLIC MODAL */}
+      {showMakePublicModal && (
+        <div className="action-modal-overlay">
+          <div className="action-modal">
+            <button className="btn-close" onClick={() => setShowMakePublicModal(false)}>
+              <X size={16} />
+            </button>
+            
+            <div className="action-modal-header">
+              <Globe size={20} color="#E25E24" />
+              <h3>Hacer Público</h3>
+            </div>
+            <p className="action-modal-desc">
+              Manda este pin a revisión para que todos puedan verlo en el mapa principal.
+            </p>
+
+            <label className="checkbox-group">
+              <input 
+                type="checkbox" 
+                checked={hasSchedule} 
+                onChange={(e) => setHasSchedule(e.target.checked)} 
+              />
+              ¿Tiene horario de disponibilidad?
+            </label>
+
+            {hasSchedule && (
+              <div className="time-inputs" style={{ marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: '4px' }}>HORA DE APERTURA</label>
+                  <input type="time" className="auth-input" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: '4px' }}>HORA DE CIERRE</label>
+                  <input type="time" className="auth-input" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="action-form-group">
+              <label>¿A QUIÉN LE PERTENECE?</label>
+              <input type="text" className="auth-input" placeholder="Ej. Club de Robótica" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+            </div>
+
+            <div className="action-form-group">
+              <label>DÍAS DISPONIBLE</label>
+              <div className="days-selector">
+                {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => (
+                  <button 
+                    key={day}
+                    className={`day-btn ${availableDays.includes(day) ? 'selected' : ''}`}
+                    onClick={() => setAvailableDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="action-form-group">
+              <label>CATEGORÍA</label>
+              <select className="auth-input" value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
+                <option value="Académico">Académico</option>
+                <option value="Deportivo">Deportivo</option>
+                <option value="Comida">Comida</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="Eventos">Eventos</option>
+              </select>
+            </div>
+
+            <button className="btn-primary-large" onClick={() => {
+              alert('Solicitud enviada a revisión exitosamente.');
+              setShowMakePublicModal(false);
+            }}>
+              <Globe size={16} /> Enviar Solicitud
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT PIN MODAL */}
+      {showReportModal && (
+        <div className="action-modal-overlay">
+          <div className="action-modal">
+            <button className="btn-close" onClick={() => setShowReportModal(false)}>
+              <X size={16} />
+            </button>
+            <div className="action-modal-header">
+              <AlertTriangle size={20} color="#cf1010" />
+              <h3 style={{ color: '#003056' }}>Reportar Pin</h3>
+            </div>
+            <p className="action-modal-desc">
+              Ayúdanos a mantener el mapa limpio. Cuéntanos por qué este pin es innecesario o incorrecto.
+            </p>
+            <div className="action-form-group">
+              <label>RAZÓN DEL REPORTE</label>
+              <textarea 
+                className="auth-input" 
+                placeholder="Escribe los detalles aquí..." 
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              />
+            </div>
+            <button className="btn-primary-large" style={{ background: '#cf1010' }} onClick={() => {
+              if(!reportReason) {
+                alert('Por favor, escribe una razón para el reporte.');
+                return;
+              }
+              alert('Reporte enviado al administrador. ¡Gracias por tu ayuda!');
+              setShowReportModal(false);
+              setReportReason('');
+            }}>
+              <AlertTriangle size={16} /> Enviar Reporte
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
