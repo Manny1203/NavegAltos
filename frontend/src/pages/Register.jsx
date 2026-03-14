@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [nombre, setNombre] = useState('');
-  const [codigo, setCodigo] = useState('');
+  const [email, setEmail] = useState('');
   const [nip, setNip] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
@@ -20,16 +20,29 @@ export default function RegisterPage() {
     setSuccessMsg('');
 
     try {
-      // Usamos el código como prefijo de un email dummy ya que Supabase Auth requiere email
-      const email = `${codigo}@alumnos.udg.mx`;
+      // Validar formato estricto: primernombre.primerapellido####@alumnos.udg.mx
+      // Explicación Regex:
+      // ^[a-zA-Z]+         : Empieza con una o más letras (primer nombre)
+      // \.                 : Un punto literal
+      // [a-zA-Z]+          : Una o más letras (primer apellido)
+      // \d{4}              : Exactamente 4 números
+      // @alumnos\.udg\.mx$ : Termina exactamente con el dominio
       
+      const emailRegex = /^[a-zA-Z]+\.[a-zA-Z]+\d{4}@alumnos\.udg\.mx$/;
+      const adminRegex = /^[a-zA-Z0-9._-]+@udg\.mx$/; // Permisivo para admins
+
+      if (!emailRegex.test(email) && !adminRegex.test(email)) {
+        setErrorMsg('El formato de correo de alumno debe ser: primernombre.primerapellido####@alumnos.udg.mx (ej. juan.perez1234@alumnos.udg.mx)');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: email,
         password: nip,
         options: {
           data: {
             nombre_completo: nombre,
-            codigo_udg: codigo
           }
         }
       });
@@ -82,11 +95,11 @@ export default function RegisterPage() {
           <div className="input-group">
             <User className="input-icon" />
             <input
-              type="text"
+              type="email"
               className="auth-input"
-              placeholder="Código de alumno o Admin"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
+              placeholder="Correo institucional"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>

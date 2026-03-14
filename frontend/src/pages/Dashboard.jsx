@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { 
   Menu, Search, Plus, Map as MapIcon, Globe, Unlock, X, 
   MapPin, BookOpen, Coffee, Car, Microscope
 } from 'lucide-react';
 import mapImage from '../assets/mapa_universidad.jpeg';
+import { supabase } from '../lib/supabase';
 import '../styles/dashboard.css';
 
 export default function Dashboard() {
@@ -15,13 +16,36 @@ export default function Dashboard() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [newPinPos, setNewPinPos] = useState(null);
   
-  // En lugar de una base de datos temporalmente, los guardamos en estado local
   const [userPins, setUserPins] = useState([]);
   
   // Pin Creator State
   const [newPinName, setNewPinName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('pin');
   const [selectedColor, setSelectedColor] = useState('#ef4444');
+
+  useEffect(() => {
+    fetchPins();
+  }, [activeFilter]);
+
+  const fetchPins = async () => {
+    try {
+      let query = supabase.from('pins').select('*');
+      
+      // If a category filter is active, filter pins by it
+      if (activeFilter) {
+        // Here you could restrict only specifically categorized pins 
+        // For now, let's keep it simple or implement when we add 'category' to form
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      if (data) {
+        setUserPins(data);
+      }
+    } catch (error) {
+      console.error('Error fetching database pins:', error);
+    }
+  };
 
   const filters = [
     { id: 'canchas', label: 'Canchas' },
@@ -155,19 +179,43 @@ export default function Dashboard() {
               setShowPinModal(false);
               setMarkerMode(false);
             }}>Cancelar</button>
-            <button className="pin-action-btn btn-save" onClick={() => {
-              const newPin = {
-                id: Date.now(),
-                x: newPinPos.x,
-                y: newPinPos.y,
-                name: newPinName,
-                icon: selectedIcon,
-                color: selectedColor
-              };
-              setUserPins([...userPins, newPin]);
-              setShowPinModal(false);
-              setMarkerMode(false);
-              setNewPinName('');
+            <button className="pin-action-btn btn-save" onClick={async () => {
+              if (!newPinName) {
+                alert("Por favor, ponle un nombre a tu pin.");
+                return;
+              }
+              try {
+                // Get the logged in user
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                const newPin = {
+                  user_id: session?.user?.id || null, // Optional if we allow anonymous, but RLS protects it normally
+                  name: newPinName,
+                  icon: selectedIcon,
+                  color: selectedColor,
+                  x_coordinate: newPinPos.x,
+                  y_coordinate: newPinPos.y,
+                  is_public: true
+                };
+
+                const { data, error } = await supabase
+                  .from('pins')
+                  .insert([newPin])
+                  .select();
+                  
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                  setUserPins([...userPins, data[0]]);
+                }
+              } catch (error) {
+                console.error("Error saving pin to Supabase:", error);
+                alert("Hubo un error al guardar el pin. Intenta de nuevo.");
+              } finally {
+                setShowPinModal(false);
+                setMarkerMode(false);
+                setNewPinName('');
+              }
             }}>Guardar Pin</button>
           </div>
         </div>
@@ -272,7 +320,8 @@ export default function Dashboard() {
               <div 
                 key={pin.id} 
                 className="map-pin"
-                style={{ left: `${pin.x}%`, top: `${pin.y}%`, borderColor: pin.color, boxShadow: `0 4px 12px ${pin.color}40` }}
+                style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color, boxShadow: `0 4px 12px ${pin.color}40` }}
+                title={pin.name || 'Pin'}
               >
                 {renderPinIcon(pin.icon, pin.color)}
               </div>

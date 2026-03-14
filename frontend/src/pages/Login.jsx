@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [codigo, setCodigo] = useState('');
+  const [email, setEmail] = useState('');
   const [nip, setNip] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +17,15 @@ export default function LoginPage() {
     setErrorMsg('');
 
     try {
-      // Usamos el código como prefijo de un email dummy ya que Supabase Auth requiere email
-      const email = `${codigo}@alumnos.udg.mx`;
-      
+      const emailRegex = /^[a-zA-Z]+\.[a-zA-Z]+\d{4}@alumnos\.udg\.mx$/;
+      const adminRegex = /^[a-zA-Z0-9._-]+@udg\.mx$/;
+
+      if (!emailRegex.test(email) && !adminRegex.test(email)) {
+        setErrorMsg('Formato incorrecto. Ejemplo: primer.apellido1234@alumnos.udg.mx');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: nip,
@@ -57,11 +63,11 @@ export default function LoginPage() {
           <div className="input-group">
             <User className="input-icon" />
             <input
-              type="text"
+              type="email"
               className="auth-input"
-              placeholder="Código de alumno o Admin"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
+              placeholder="Correo institucional"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
