@@ -24,8 +24,6 @@ export default function Dashboard() {
 
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
-  // Admin mode
-  const [adminMode, setAdminMode] = useState(false);
 
   // Modals state
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -60,12 +58,6 @@ export default function Dashboard() {
     setCurrentUser(session?.user || null);
   };
 
-  // Check if user email has admin/academic domain
-  const isAdminUser = () => {
-    if (!currentUser?.email) return false;
-    const emailDomain = currentUser.email.split('@')[1]?.toLowerCase() || '';
-    return emailDomain.startsWith('academicos') || emailDomain.startsWith('administracion');
-  };
 
   // Logout handler
   const handleLogout = async () => {
@@ -144,19 +136,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       
-      {/* Top Navbar */}
-      <div className="top-navbar">
-        <div className="navbar-left">
-          <span className="navbar-brand">NavegAltos</span>
-          {adminMode && <span className="navbar-admin-badge">Modo Administrador</span>}
-        </div>
-        <button className="navbar-logout-btn" onClick={handleLogout} title="Cerrar sesión">
-          <LogOut size={18} />
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
-
-      {/* Search Bar (below navbar) */}
+      {/* Search Bar (formerly below navbar) */}
       <div className="floating-ui top-bar">
         <button className="icon-btn" onClick={() => setShowMenuSidebar(!showMenuSidebar)}>
           <Menu size={24} />
@@ -193,30 +173,17 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="menu-sidebar-content">
-              {isAdminUser() && (
-                <button 
-                  className="menu-sidebar-item"
-                  onClick={() => { setAdminMode(!adminMode); setShowMenuSidebar(false); }}
-                >
-                  <Shield size={20} />
-                  <div className="menu-item-text">
-                    <span className="menu-item-label">Modo Administrador</span>
-                    <span className="menu-item-desc">
-                      {adminMode ? 'Activo — Toca para desactivar' : 'Activar permisos de administración'}
-                    </span>
-                  </div>
-                  {adminMode && <div className="menu-item-active-dot" />}
-                </button>
-              )}
-              {!isAdminUser() && (
-                <div className="menu-sidebar-item disabled">
-                  <Shield size={20} />
-                  <div className="menu-item-text">
-                    <span className="menu-item-label">Modo Administrador</span>
-                    <span className="menu-item-desc">Solo disponible para académicos y administradores</span>
-                  </div>
+              <button 
+                className="menu-sidebar-item text-danger"
+                onClick={handleLogout}
+                style={{ color: '#cf1010', marginTop: 'auto' }}
+              >
+                <LogOut size={20} />
+                <div className="menu-item-text">
+                  <span className="menu-item-label">Cerrar Sesión</span>
+                  <span className="menu-item-desc">Salir de tu cuenta</span>
                 </div>
-              )}
+              </button>
             </div>
           </div>
         </>
