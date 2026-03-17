@@ -12,7 +12,6 @@ import '../styles/dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); 
@@ -24,10 +23,7 @@ export default function Dashboard() {
 
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
-  // Admin mode
   const [adminMode, setAdminMode] = useState(false);
-  // Pin visibility filter: null = all, 'private' = user pins only, 'global' = public/official pins only
-  const [pinVisibility, setPinVisibility] = useState(null);
 
   // Modals state
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -77,7 +73,7 @@ export default function Dashboard() {
 
   // Toggle pin visibility filter
   const togglePinVisibility = (type) => {
-    setPinVisibility(prev => prev === type ? null : type);
+    setVisibilityFilter(prev => prev === type ? 'all' : type);
   };
 
   const fetchPins = async () => {
@@ -336,52 +332,33 @@ export default function Dashboard() {
 
       {/* Right Sidebar */}
       <div className="floating-ui right-sidebar">
-<<<<<<< HEAD
         <button className="icon-btn sidebar-btn" title="Mapa">
           <MapIcon size={24} />
           <span className="sidebar-tooltip">Mapa</span>
         </button>
         <button 
-          className={`icon-btn sidebar-btn ${pinVisibility === 'global' ? 'sidebar-active' : ''}`} 
-          onClick={() => togglePinVisibility('global')}
-          title="Pines globales"
-        >
-          <Globe size={24} />
-          <span className="sidebar-tooltip">Pines Globales</span>
-        </button>
-        <button 
-          className={`icon-btn sidebar-btn ${pinVisibility === 'private' ? 'sidebar-active' : ''}`} 
-          onClick={() => togglePinVisibility('private')}
-          title="Mis pines privados"
-        >
-          <Lock size={24} />
-          <span className="sidebar-tooltip">Mis Pines</span>
-=======
-        <button className="icon-btn">
-          <MapIcon size={24} />
-        </button>
-        <button 
-          className={`icon-btn ${visibilityFilter === 'public' ? 'active-filter' : ''}`}
-          onClick={() => setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public')}
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active' : ''}`} 
+          onClick={() => togglePinVisibility('public')}
           style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
           title="Ver pines públicos"
         >
           <Globe size={24} />
+          <span className="sidebar-tooltip">Pines Públicos</span>
         </button>
         <button 
-          className={`icon-btn ${visibilityFilter === 'private' ? 'active-filter' : ''}`}
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active' : ''}`} 
           onClick={() => {
             if (!currentUser) {
               alert("Debes iniciar sesión para ver tus pines privados.");
               return;
             }
-            setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
+            togglePinVisibility('private');
           }}
           style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
           title="Ver mis pines privados"
         >
-          <Unlock size={24} />
->>>>>>> 73cfe21 ([FIX] Filtros de categoría funcionando / filtros públicos y privados arreglados)
+          <Lock size={24} />
+          <span className="sidebar-tooltip">Mis Pines Privados</span>
         </button>
       </div>
 
@@ -469,23 +446,8 @@ export default function Dashboard() {
                 alt="Mapa Universitario" 
                 className="map-image"
               />
-<<<<<<< HEAD
-            {/* Render Mock Pins and newly created user Pins */}
-            {[...pins, ...userPins].filter(pin => {
-              if (pinVisibility === 'private') {
-                // Show only user's own pins (from DB, not mocked)
-                return pin.user_id && currentUser && pin.user_id === currentUser.id;
-              }
-              if (pinVisibility === 'global') {
-                // Show only public/official pins (mocked pins have no user_id, or is_public is true)
-                return !pin.user_id || pin.is_public;
-              }
-              return true; // Show all
-            }).map(pin => (
-=======
             {/* Render dynamically fetched user Pins */}
             {userPins.map(pin => (
->>>>>>> 73cfe21 ([FIX] Filtros de categoría funcionando / filtros públicos y privados arreglados)
               <div 
                 key={pin.id} 
                 className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
