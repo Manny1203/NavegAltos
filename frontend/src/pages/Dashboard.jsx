@@ -13,6 +13,7 @@ import '../styles/dashboard.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState(null);
+  const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); 
   const [markerMode, setMarkerMode] = useState(false);
@@ -49,11 +50,12 @@ export default function Dashboard() {
   const [newPinName, setNewPinName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('pin');
   const [selectedColor, setSelectedColor] = useState('#ef4444');
+  const [newPinCategory, setNewPinCategory] = useState('aulas'); // Default category
 
   useEffect(() => {
     fetchPins();
     fetchUser();
-  }, [activeFilter]);
+  }, [activeFilter, visibilityFilter, currentUser?.id]);
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -84,8 +86,14 @@ export default function Dashboard() {
       
       // If a category filter is active, filter pins by it
       if (activeFilter) {
-        // Here you could restrict only specifically categorized pins 
-        // For now, let's keep it simple or implement when we add 'category' to form
+        query = query.eq('category', activeFilter);
+      }
+
+      // If a visibility filter is active, filter pins accordingly
+      if (visibilityFilter === 'public') {
+        query = query.eq('is_public', true);
+      } else if (visibilityFilter === 'private' && currentUser) {
+        query = query.eq('is_public', false).eq('user_id', currentUser.id);
       }
 
       const { data, error } = await query;
@@ -112,13 +120,10 @@ export default function Dashboard() {
       setShowModal(false);
     } else {
       setActiveFilter(id);
-      if (id === 'aulas' || id === 'cafeteria') {
-        setModalType(id);
-        setShowModal(true);
-        setMarkerMode(false);
-      } else {
-        setShowModal(false);
-      }
+      const filterLabel = filters.find(f => f.id === id)?.label || 'Opciones';
+      setModalType(filterLabel);
+      setShowModal(true);
+      setMarkerMode(false);
     }
   };
 
@@ -131,17 +136,7 @@ export default function Dashboard() {
     }
   };
 
-  // Mocked Pins array (like the reference image)
-  const pins = [
-    { id: 1, x: 25, y: 55, icon: 'book', color: '#10b981' }, // Green book
-    { id: 2, x: 40, y: 65, icon: 'microscope', color: '#3b82f6' }, // Blue microscope
-    { id: 3, x: 43, y: 54, icon: 'coffee', color: '#f97316' }, // Orange coffee
-    { id: 4, x: 55, y: 48, icon: 'pin', color: '#a855f7' }, // Purple pin
-    { id: 5, x: 56, y: 65, icon: 'pin', color: '#60a5fa' }, // Light blue pin
-    { id: 6, x: 67, y: 54, icon: 'pin', color: '#f97316' }, // Orange pin
-    { id: 7, x: 67, y: 25, icon: 'pin', color: '#ef4444' }, // Red pin
-    { id: 8, x: 74, y: 35, icon: 'pin', color: '#10b981' }, // Green pin
-  ];
+  // Mocked Pins array removed
 
   const renderPinIcon = (type, color) => {
     switch (type) {
@@ -254,6 +249,18 @@ export default function Dashboard() {
             onChange={(e) => setNewPinName(e.target.value)}
           />
 
+          <div className="modal-section-title">CATEGORÍA</div>
+          <select 
+            className="pin-name-input" 
+            style={{ marginBottom: '16px', background: 'white' }}
+            value={newPinCategory}
+            onChange={(e) => setNewPinCategory(e.target.value)}
+          >
+            {filters.map(f => (
+              <option key={f.id} value={f.id}>{f.label}</option>
+            ))}
+          </select>
+
           <div className="modal-section-title">ICONO Y COLOR</div>
           <div className="pin-options-row">
             {['pin', 'coffee', 'car', 'book', 'microscope'].map(icon => (
@@ -295,6 +302,7 @@ export default function Dashboard() {
                 const newPin = {
                   user_id: session?.user?.id || null, // Optional if we allow anonymous, but RLS protects it normally
                   name: newPinName,
+                  category: newPinCategory,
                   icon: selectedIcon,
                   color: selectedColor,
                   x_coordinate: newPinPos.x,
@@ -319,6 +327,7 @@ export default function Dashboard() {
                 setShowPinModal(false);
                 setMarkerMode(false);
                 setNewPinName('');
+                setNewPinCategory('aulas'); // Reset category
               }
             }}>Guardar Pin</button>
           </div>
@@ -327,6 +336,7 @@ export default function Dashboard() {
 
       {/* Right Sidebar */}
       <div className="floating-ui right-sidebar">
+<<<<<<< HEAD
         <button className="icon-btn sidebar-btn" title="Mapa">
           <MapIcon size={24} />
           <span className="sidebar-tooltip">Mapa</span>
@@ -346,6 +356,32 @@ export default function Dashboard() {
         >
           <Lock size={24} />
           <span className="sidebar-tooltip">Mis Pines</span>
+=======
+        <button className="icon-btn">
+          <MapIcon size={24} />
+        </button>
+        <button 
+          className={`icon-btn ${visibilityFilter === 'public' ? 'active-filter' : ''}`}
+          onClick={() => setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public')}
+          style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
+          title="Ver pines públicos"
+        >
+          <Globe size={24} />
+        </button>
+        <button 
+          className={`icon-btn ${visibilityFilter === 'private' ? 'active-filter' : ''}`}
+          onClick={() => {
+            if (!currentUser) {
+              alert("Debes iniciar sesión para ver tus pines privados.");
+              return;
+            }
+            setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
+          }}
+          style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
+          title="Ver mis pines privados"
+        >
+          <Unlock size={24} />
+>>>>>>> 73cfe21 ([FIX] Filtros de categoría funcionando / filtros públicos y privados arreglados)
         </button>
       </div>
 
@@ -367,33 +403,30 @@ export default function Dashboard() {
         <div className="modal-overlay floating-ui">
           <div className="modal-header">
             <span className="modal-title">
-              {modalType === 'frecuentes' ? 'FRECUENTES' : modalType === 'aulas' ? 'Aulas' : 'Opciones'}
+              {modalType === 'frecuentes' ? 'BÚSQUEDA FRECUENTE' : modalType?.toUpperCase() || 'RESULTADOS'}
             </span>
             <button className="modal-close" onClick={() => setShowModal(false)}><X size={20}/></button>
           </div>
           
           <div className="modal-content">
-            <div className="modal-item">
-              <div className="modal-item-icon" style={{ color: '#60a5fa', background: '#eff6ff' }}><MapPin size={20}/></div>
-              <div className="modal-item-text">
-                <div className="modal-item-title">Edificio de Rectoría</div>
-                <div className="modal-item-subtitle">CUALTOS CAMPUS</div>
-              </div>
-            </div>
-            <div className="modal-item">
-              <div className="modal-item-icon" style={{ color: '#10b981', background: '#ecfdf5' }}><BookOpen size={20}/></div>
-              <div className="modal-item-text">
-                <div className="modal-item-title">Biblioteca Mario Rivas Souza</div>
-                <div className="modal-item-subtitle">CUALTOS CAMPUS</div>
-              </div>
-            </div>
-            <div className="modal-item">
-              <div className="modal-item-icon" style={{ color: '#f97316', background: '#fff7ed' }}><MapPin size={20}/></div>
-              <div className="modal-item-text">
-                <div className="modal-item-title">Aulas Agroindustrias (D)</div>
-                <div className="modal-item-subtitle">CUALTOS CAMPUS</div>
-              </div>
-            </div>
+            {userPins.length > 0 ? (
+              userPins.map(pin => (
+                <div key={pin.id} className="modal-item" onClick={() => {
+                  setSelectedPin(pin);
+                  setShowModal(false);
+                }}>
+                  <div className="modal-item-icon" style={{ color: pin.color || '#60a5fa', background: `${pin.color || '#60a5fa'}20` }}>
+                    {renderPinIcon(pin.icon, pin.color || '#60a5fa')}
+                  </div>
+                  <div className="modal-item-text">
+                    <div className="modal-item-title">{pin.name}</div>
+                    <div className="modal-item-subtitle">{pin.category ? pin.category.toUpperCase() : 'CUALTOS CAMPUS'}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', width: '100%' }}>No hay pines registrados</div>
+            )}
           </div>
         </div>
       )}
@@ -436,6 +469,7 @@ export default function Dashboard() {
                 alt="Mapa Universitario" 
                 className="map-image"
               />
+<<<<<<< HEAD
             {/* Render Mock Pins and newly created user Pins */}
             {[...pins, ...userPins].filter(pin => {
               if (pinVisibility === 'private') {
@@ -448,6 +482,10 @@ export default function Dashboard() {
               }
               return true; // Show all
             }).map(pin => (
+=======
+            {/* Render dynamically fetched user Pins */}
+            {userPins.map(pin => (
+>>>>>>> 73cfe21 ([FIX] Filtros de categoría funcionando / filtros públicos y privados arreglados)
               <div 
                 key={pin.id} 
                 className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
@@ -584,11 +622,9 @@ export default function Dashboard() {
             <div className="action-form-group">
               <label>CATEGORÍA</label>
               <select className="auth-input" value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
-                <option value="Académico">Académico</option>
-                <option value="Deportivo">Deportivo</option>
-                <option value="Comida">Comida</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="Eventos">Eventos</option>
+                {filters.map(f => (
+                  <option key={f.id} value={f.id}>{f.label}</option>
+                ))}
               </select>
             </div>
 
