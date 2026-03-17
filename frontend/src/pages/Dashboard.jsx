@@ -12,6 +12,7 @@ import '../styles/dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); 
@@ -23,6 +24,7 @@ export default function Dashboard() {
 
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
+  // Admin mode
   const [adminMode, setAdminMode] = useState(false);
 
   // Modals state
@@ -69,11 +71,6 @@ export default function Dashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
-  };
-
-  // Toggle pin visibility filter
-  const togglePinVisibility = (type) => {
-    setVisibilityFilter(prev => prev === type ? 'all' : type);
   };
 
   const fetchPins = async () => {
@@ -337,8 +334,8 @@ export default function Dashboard() {
           <span className="sidebar-tooltip">Mapa</span>
         </button>
         <button 
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active' : ''}`} 
-          onClick={() => togglePinVisibility('public')}
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`} 
+          onClick={() => setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public')}
           style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
           title="Ver pines públicos"
         >
@@ -346,19 +343,19 @@ export default function Dashboard() {
           <span className="sidebar-tooltip">Pines Públicos</span>
         </button>
         <button 
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active' : ''}`} 
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`} 
           onClick={() => {
             if (!currentUser) {
               alert("Debes iniciar sesión para ver tus pines privados.");
               return;
             }
-            togglePinVisibility('private');
+            setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
           }}
           style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
-          title="Ver mis pines privados"
+          title="Mis pines privados"
         >
           <Lock size={24} />
-          <span className="sidebar-tooltip">Mis Pines Privados</span>
+          <span className="sidebar-tooltip">Mis Pines</span>
         </button>
       </div>
 
