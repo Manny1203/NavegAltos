@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { 
-  Menu, Search, Plus, Map as MapIcon, Globe, Unlock, X, 
+  Menu, Search, Plus, Map as MapIcon, Globe, Lock, X, 
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2
+  AlertTriangle, Trash2, LogOut, Shield
 } from 'lucide-react';
 import mapImage from '../assets/mapa_universidad.jpeg';
 import { supabase } from '../lib/supabase';
 import '../styles/dashboard.css';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null); 
@@ -18,6 +20,13 @@ export default function Dashboard() {
   const [newPinPos, setNewPinPos] = useState(null);
   const [selectedPin, setSelectedPin] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Menu sidebar state
+  const [showMenuSidebar, setShowMenuSidebar] = useState(false);
+  // Admin mode
+  const [adminMode, setAdminMode] = useState(false);
+  // Pin visibility filter: null = all, 'private' = user pins only, 'global' = public/official pins only
+  const [pinVisibility, setPinVisibility] = useState(null);
 
   // Modals state
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -49,6 +58,24 @@ export default function Dashboard() {
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setCurrentUser(session?.user || null);
+  };
+
+  // Check if user email has admin/academic domain
+  const isAdminUser = () => {
+    if (!currentUser?.email) return false;
+    const emailDomain = currentUser.email.split('@')[1]?.toLowerCase() || '';
+    return emailDomain.startsWith('academicos') || emailDomain.startsWith('administracion');
+  };
+
+  // Logout handler
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  // Toggle pin visibility filter
+  const togglePinVisibility = (type) => {
+    setPinVisibility(prev => prev === type ? null : type);
   };
 
   const fetchPins = async () => {
@@ -129,9 +156,21 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       
-      {/* Top Bar Navigation */}
+      {/* Top Navbar */}
+      <div className="top-navbar">
+        <div className="navbar-left">
+          <span className="navbar-brand">NavegAltos</span>
+          {adminMode && <span className="navbar-admin-badge">Modo Administrador</span>}
+        </div>
+        <button className="navbar-logout-btn" onClick={handleLogout} title="Cerrar sesión">
+          <LogOut size={18} />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+
+      {/* Search Bar (below navbar) */}
       <div className="floating-ui top-bar">
-        <button className="icon-btn">
+        <button className="icon-btn" onClick={() => setShowMenuSidebar(!showMenuSidebar)}>
           <Menu size={24} />
         </button>
         
@@ -153,6 +192,47 @@ export default function Dashboard() {
           {markerMode ? <X size={24} /> : <Plus size={24} />}
         </button>
       </div>
+
+      {/* Menu Sidebar */}
+      {showMenuSidebar && (
+        <>
+          <div className="menu-sidebar-overlay" onClick={() => setShowMenuSidebar(false)} />
+          <div className="menu-sidebar">
+            <div className="menu-sidebar-header">
+              <span className="menu-sidebar-title">Menú</span>
+              <button className="menu-sidebar-close" onClick={() => setShowMenuSidebar(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="menu-sidebar-content">
+              {isAdminUser() && (
+                <button 
+                  className="menu-sidebar-item"
+                  onClick={() => { setAdminMode(!adminMode); setShowMenuSidebar(false); }}
+                >
+                  <Shield size={20} />
+                  <div className="menu-item-text">
+                    <span className="menu-item-label">Modo Administrador</span>
+                    <span className="menu-item-desc">
+                      {adminMode ? 'Activo — Toca para desactivar' : 'Activar permisos de administración'}
+                    </span>
+                  </div>
+                  {adminMode && <div className="menu-item-active-dot" />}
+                </button>
+              )}
+              {!isAdminUser() && (
+                <div className="menu-sidebar-item disabled">
+                  <Shield size={20} />
+                  <div className="menu-item-text">
+                    <span className="menu-item-label">Modo Administrador</span>
+                    <span className="menu-item-desc">Solo disponible para académicos y administradores</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
         {/* Marker Mode helper banner */}
         {markerMode && !showPinModal && (
@@ -247,9 +327,26 @@ export default function Dashboard() {
 
       {/* Right Sidebar */}
       <div className="floating-ui right-sidebar">
-        <button className="icon-btn"><MapIcon size={24} /></button>
-        <button className="icon-btn"><Globe size={24} /></button>
-        <button className="icon-btn"><Unlock size={24} /></button>
+        <button className="icon-btn sidebar-btn" title="Mapa">
+          <MapIcon size={24} />
+          <span className="sidebar-tooltip">Mapa</span>
+        </button>
+        <button 
+          className={`icon-btn sidebar-btn ${pinVisibility === 'global' ? 'sidebar-active' : ''}`} 
+          onClick={() => togglePinVisibility('global')}
+          title="Pines globales"
+        >
+          <Globe size={24} />
+          <span className="sidebar-tooltip">Pines Globales</span>
+        </button>
+        <button 
+          className={`icon-btn sidebar-btn ${pinVisibility === 'private' ? 'sidebar-active' : ''}`} 
+          onClick={() => togglePinVisibility('private')}
+          title="Mis pines privados"
+        >
+          <Lock size={24} />
+          <span className="sidebar-tooltip">Mis Pines</span>
+        </button>
       </div>
 
       {/* Bottom Filters */}
@@ -340,7 +437,17 @@ export default function Dashboard() {
                 className="map-image"
               />
             {/* Render Mock Pins and newly created user Pins */}
-            {[...pins, ...userPins].map(pin => (
+            {[...pins, ...userPins].filter(pin => {
+              if (pinVisibility === 'private') {
+                // Show only user's own pins (from DB, not mocked)
+                return pin.user_id && currentUser && pin.user_id === currentUser.id;
+              }
+              if (pinVisibility === 'global') {
+                // Show only public/official pins (mocked pins have no user_id, or is_public is true)
+                return !pin.user_id || pin.is_public;
+              }
+              return true; // Show all
+            }).map(pin => (
               <div 
                 key={pin.id} 
                 className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}

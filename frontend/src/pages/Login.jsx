@@ -17,11 +17,11 @@ export default function LoginPage() {
     setErrorMsg('');
 
     try {
-      const emailRegex = /^[a-zA-Z]+\.[a-zA-Z]+\d{4}@alumnos\.udg\.mx$/;
-      const adminRegex = /^[a-zA-Z0-9._-]+@udg\.mx$/;
+      // Acepta: @alumnos.udg.mx, @academicos.udg.mx, @administracion.udg.mx, @udg.mx
+      const validEmailRegex = /^[a-zA-Z0-9._-]+@(alumnos\.|academicos\.|administracion\.)?udg\.mx$/;
 
-      if (!emailRegex.test(email) && !adminRegex.test(email)) {
-        setErrorMsg('Formato incorrecto. Ejemplo: primer.apellido1234@alumnos.udg.mx');
+      if (!validEmailRegex.test(email)) {
+        setErrorMsg('Usa tu correo institucional UDG (ej. nombre.apellido1234@alumnos.udg.mx)');
         setIsLoading(false);
         return;
       }

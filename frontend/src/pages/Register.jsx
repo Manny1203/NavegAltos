@@ -20,19 +20,12 @@ export default function RegisterPage() {
     setSuccessMsg('');
 
     try {
-      // Validar formato estricto: primernombre.primerapellido####@alumnos.udg.mx
-      // Explicación Regex:
-      // ^[a-zA-Z]+         : Empieza con una o más letras (primer nombre)
-      // \.                 : Un punto literal
-      // [a-zA-Z]+          : Una o más letras (primer apellido)
-      // \d{4}              : Exactamente 4 números
-      // @alumnos\.udg\.mx$ : Termina exactamente con el dominio
-      
-      const emailRegex = /^[a-zA-Z]+\.[a-zA-Z]+\d{4}@alumnos\.udg\.mx$/;
-      const adminRegex = /^[a-zA-Z0-9._-]+@udg\.mx$/; // Permisivo para admins
+      // Validar correo institucional UDG
+      // Acepta: @alumnos.udg.mx, @academicos.udg.mx, @administracion.udg.mx, @udg.mx
+      const validEmailRegex = /^[a-zA-Z0-9._-]+@(alumnos\.|academicos\.|administracion\.)?udg\.mx$/;
 
-      if (!emailRegex.test(email) && !adminRegex.test(email)) {
-        setErrorMsg('El formato de correo de alumno debe ser: primernombre.primerapellido####@alumnos.udg.mx (ej. juan.perez1234@alumnos.udg.mx)');
+      if (!validEmailRegex.test(email)) {
+        setErrorMsg('Usa tu correo institucional UDG (ej. nombre.apellido1234@alumnos.udg.mx, nombre@academicos.udg.mx)');
         setIsLoading(false);
         return;
       }
