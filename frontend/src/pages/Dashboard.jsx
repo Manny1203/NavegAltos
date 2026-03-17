@@ -48,6 +48,9 @@ export default function Dashboard() {
   const [selectedColor, setSelectedColor] = useState('#ef4444');
   const [newPinCategory, setNewPinCategory] = useState('aulas'); // Default category
 
+  // Admin logic
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
     fetchPins();
     fetchUser();
@@ -55,7 +58,15 @@ export default function Dashboard() {
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    setCurrentUser(session?.user || null);
+    if (session?.user) {
+      setCurrentUser(session.user);
+      // Check if admin
+      const { data } = await supabase.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+      if (data) setIsAdmin(true);
+    } else {
+      setCurrentUser(null);
+      setIsAdmin(false);
+    }
   };
 
 
@@ -173,6 +184,19 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="menu-sidebar-content">
+              {isAdmin && (
+                <button 
+                  className="menu-sidebar-item"
+                  onClick={() => navigate('/admin')}
+                  style={{ marginBottom: '16px' }}
+                >
+                  <Shield size={20} color="#003056" />
+                  <div className="menu-item-text">
+                    <span className="menu-item-label" style={{ color: '#003056' }}>Panel de Control</span>
+                    <span className="menu-item-desc">Gestión de pines y solicitudes</span>
+                  </div>
+                </button>
+              )}
               <button 
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
@@ -554,9 +578,39 @@ export default function Dashboard() {
               </select>
             </div>
 
-            <button className="btn-primary-large" onClick={() => {
-              alert('Solicitud enviada a revisión exitosamente.');
-              setShowMakePublicModal(false);
+            <button className="btn-primary-large" onClick={async () => {
+              if (!ownerName) {
+                alert('Por favor, indica a quién le pertenece este pin.');
+                return;
+              }
+              
+              if (!currentUser) return;
+              
+              try {
+                const requestData = {
+                  pin_id: selectedPin.id,
+                  requester_id: currentUser.id,
+                  requester_name: ownerName,
+                  request_reason: 'Solicitud para hacer el pin público.',
+                  has_schedule: hasSchedule,
+                  open_time: openTime || null,
+                  close_time: closeTime || null,
+                  available_days: availableDays,
+                  status: 'pending'
+                };
+                
+                const { error } = await supabase.from('pin_requests').insert([requestData]);
+                
+                if (error) throw error;
+                
+                alert('Solicitud enviada a revisión exitosamente.');
+                setShowMakePublicModal(false);
+                setOwnerName('');
+                setHasSchedule(false);
+              } catch (e) {
+                console.error("Error pidiendo pin público: ", e);
+                alert("Hubo un error al enviar la solicitud.");
+              }
             }}>
               <Globe size={16} /> Enviar Solicitud
             </button>
