@@ -467,7 +467,7 @@ export default function Dashboard() {
         <div className="pin-details-sheet">
           <button className="close-sheet-btn" onClick={() => setSelectedPin(null)}>
             <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-               <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
             </span>
           </button>
           
@@ -488,14 +488,12 @@ export default function Dashboard() {
           </div>
 
           <div className="sheet-actions-secondary">
-            {/* If the user owns the pin */}
-            {currentUser && selectedPin.user_id === currentUser.id ? (
+            {/* Private pin owned by the user: show Hacer Público + Borrar */}
+            {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
-                {!selectedPin.is_public && (
-                  <button className="btn-secondary btn-public" onClick={() => setShowMakePublicModal(true)}>
-                    <Globe size={14} /> Hacer Público
-                  </button>
-                )}
+                <button className="btn-secondary btn-public" onClick={() => setShowMakePublicModal(true)}>
+                  <Globe size={14} /> Hacer Público
+                </button>
                 <button className="btn-secondary btn-danger" onClick={async () => {
                   if(window.confirm('¿Seguro que quieres borrar este pin?')) {
                     await supabase.from('pins').delete().eq('id', selectedPin.id);
@@ -507,15 +505,21 @@ export default function Dashboard() {
                 </button>
               </>
             ) : (
-              /* If it's a public pin not owned by the user */
-              <button className="btn-secondary btn-danger" onClick={() => setShowReportModal(true)}>
-                <AlertTriangle size={14} /> Reportar Pin
+              /* Public pin (even if owner sent it to review) or other user's pin: show Reportar */
+              <button className="btn-report" onClick={() => setShowReportModal(true)}>
+                <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
+                  <AlertTriangle size={14} style={{ display: 'block', width: '14px', height: '14px' }} />
+                </span>
+                Reportar Pin
               </button>
             )}
           </div>
 
           <button className="btn-primary-large">
-            <Route size={16} /> Iniciar Recorrido
+            <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+              <Route size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+            </span>
+            Iniciar Recorrido
           </button>
         </div>
       )}

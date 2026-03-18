@@ -650,46 +650,43 @@
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  width: 360px;
+  width: 380px;
   background: white;
   border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  padding: 22px 24px 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
   z-index: 40;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-  from { transform: translate(-50%, 40px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
 }
 
 .close-sheet-btn {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: #f3f4f6 !important;
-  width: 28px;
-  height: 28px;
+  background: #f3f4f6;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280 !important;
+  border: none;
   cursor: pointer;
   transition: all 0.2s;
+  color: #6b7280;
 }
 
 .close-sheet-btn:hover {
-  background: #e5e7eb !important;
-  color: #111827 !important;
+  background: #e5e7eb;
+  color: #111827;
 }
 
 .sheet-header h3 {
-  margin: 0;
+  margin: 0 0 2px;
   font-size: 18px;
   font-weight: 800;
   color: #003056;
+  padding-right: 40px;
 }
 
 .sheet-subtitle {
@@ -730,7 +727,8 @@
 
 .sheet-actions-secondary {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 16px;
 }
 
@@ -761,13 +759,35 @@
 }
 .btn-danger:hover { background: #fee2e2; }
 
+.btn-report {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: transparent;
+  color: #E25E24;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-report:hover {
+  background: #fff5f0;
+  border-color: #E25E24;
+}
+
 .btn-primary-large {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 10px;
   background: #E25E24;
   color: white;
   border: none;
-  padding: 14px;
+  padding: 15px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 700;
@@ -777,6 +797,7 @@
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  letter-spacing: 0.2px;
 }
 
 .btn-primary-large:hover {
