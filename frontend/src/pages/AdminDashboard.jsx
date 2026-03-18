@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { 
-  Menu, X, MapPin, Users, AlertTriangle, 
-  Check, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope
+  Menu, X, MapPin, Users, AlertTriangle, Flag,
+  Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import mapImage from '../assets/mapa_universidad.jpeg';
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   // Data states
   const [requests, setRequests] = useState([]);
   const [publicPins, setPublicPins] = useState([]);
+  const [reports, setReports] = useState([]);
   
   // Edit State
   const [editingPin, setEditingPin] = useState(null);
@@ -70,6 +71,15 @@ export default function AdminDashboard() {
       .order('created_at', { ascending: false });
       
     if (!pinsError && pinsData) setPublicPins(pinsData);
+
+    // Load Pin Reports
+    const { data: reportsData, error: reportsError } = await supabase
+      .from('pin_reports')
+      .select('*, pins(name, category)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+      
+    if (!reportsError && reportsData) setReports(reportsData);
   };
 
   const handleApprove = async (request) => {
@@ -143,6 +153,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResolveReport = async (report) => {
+    try {
+      const { data, error } = await supabase
+        .from('pin_reports')
+        .update({ status: 'resolved' })
+        .eq('id', report.id)
+        .select();
+      if (error) {
+        console.error('Error RLS/DB al resolver:', JSON.stringify(error));
+        alert('Error al resolver: ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+      console.log('Reporte resuelto:', data);
+      alert('Reporte marcado como resuelto.');
+      loadData();
+    } catch (e) {
+      console.error('Error inesperado al resolver reporte:', e);
+      alert('Error inesperado: ' + e.message);
+    }
+  };
+
+  const handleDismissReport = async (reportId) => {
+    try {
+      const { data, error } = await supabase
+        .from('pin_reports')
+        .update({ status: 'dismissed' })
+        .eq('id', reportId)
+        .select();
+      if (error) {
+        console.error('Error RLS/DB al descartar:', JSON.stringify(error));
+        alert('Error al descartar: ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+      console.log('Reporte descartado:', data);
+      loadData();
+    } catch (e) {
+      console.error('Error inesperado al descartar reporte:', e);
+      alert('Error inesperado: ' + e.message);
+    }
+  };
+
   const renderPinIcon = (type, color) => {
     switch (type) {
       case 'book': return <BookOpen color={color} />;
@@ -206,12 +257,20 @@ export default function AdminDashboard() {
               <MapPin size={18} />
               <span>Pines Públicos</span>
             </button>
+            <button 
+              className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              <Flag size={18} />
+              <span>Reportes</span>
+              {reports.length > 0 && <span className="admin-badge">{reports.length}</span>}
+            </button>
             {/* Ocultamos Usuarios como pediste */}
           </div>
 
           <div className="admin-sidebar-section">
             <h4 className="section-title">
-              {activeTab === 'requests' ? 'SOLICITUDES Y REPORTES' : 'GESTIÓN DE PINES'}
+              {activeTab === 'requests' ? 'SOLICITUDES Y REPORTES' : activeTab === 'public_pins' ? 'GESTIÓN DE PINES' : 'REPORTES DE USUARIOS'}
             </h4>
             
             <div className="admin-search">
@@ -244,6 +303,34 @@ export default function AdminDashboard() {
                       <div className="admin-card-actions">
                         <button className="btn-reject" onClick={() => handleReject(req)}>Rechazar</button>
                         <button className="btn-approve" onClick={() => handleApprove(req)}>Aprobar</button>
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+
+              {activeTab === 'reports' && (
+                reports.length === 0 ? (
+                  <p className="admin-empty">No hay reportes pendientes.</p>
+                ) : (
+                  reports.map(report => (
+                    <div key={report.id} className="admin-card">
+                      <div className="admin-card-header">
+                        <div className="admin-card-icon req-icon">
+                          <Flag size={14} color="#ef4444" />
+                        </div>
+                        <div className="admin-card-title-group">
+                          <h5>{report.pins?.name || 'Pin desconocido'}</h5>
+                          <span className="admin-date">{new Date(report.created_at).toLocaleDateString('es-MX')}</span>
+                        </div>
+                      </div>
+                      <p className="admin-card-desc">
+                        <strong>Categoría:</strong> {report.pins?.category || '—'}<br/>
+                        <strong>Razón:</strong> {report.reason}
+                      </p>
+                      <div className="admin-card-actions">
+                        <button className="btn-reject" onClick={() => handleDismissReport(report.id)}>Descartar</button>
+                        <button className="btn-approve" onClick={() => handleResolveReport(report)}>Resuelto</button>
                       </div>
                     </div>
                   ))

@@ -657,14 +657,26 @@ export default function Dashboard() {
                 onChange={(e) => setReportReason(e.target.value)}
               />
             </div>
-            <button className="btn-primary-large" style={{ background: '#cf1010' }} onClick={() => {
-              if(!reportReason) {
+            <button className="btn-primary-large" style={{ background: '#cf1010' }} onClick={async () => {
+              if(!reportReason.trim()) {
                 alert('Por favor, escribe una razón para el reporte.');
                 return;
               }
-              alert('Reporte enviado al administrador. ¡Gracias por tu ayuda!');
-              setShowReportModal(false);
-              setReportReason('');
+              try {
+                const { error } = await supabase.from('pin_reports').insert([{
+                  pin_id: selectedPin.id,
+                  reporter_id: currentUser?.id || null,
+                  reason: reportReason.trim(),
+                  status: 'pending'
+                }]);
+                if (error) throw error;
+                alert('Reporte enviado al administrador. ¡Gracias por tu ayuda!');
+                setShowReportModal(false);
+                setReportReason('');
+              } catch (e) {
+                console.error('Error enviando reporte:', e);
+                alert('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
+              }
             }}>
               <AlertTriangle size={16} /> Enviar Reporte
             </button>
