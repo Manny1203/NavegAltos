@@ -180,7 +180,9 @@ export default function Dashboard() {
             <div className="menu-sidebar-header">
               <span className="menu-sidebar-title">Menú</span>
               <button className="menu-sidebar-close" onClick={() => setShowMenuSidebar(false)}>
-                <X size={20} />
+                <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={20} style={{ display: 'block', width: '20px', height: '20px' }} />
+                </span>
               </button>
             </div>
             <div className="menu-sidebar-content">
@@ -370,7 +372,11 @@ export default function Dashboard() {
             <span className="modal-title">
               {modalType === 'frecuentes' ? 'BÚSQUEDA FRECUENTE' : modalType?.toUpperCase() || 'RESULTADOS'}
             </span>
-            <button className="modal-close" onClick={() => setShowModal(false)}><X size={20}/></button>
+            <button className="modal-close" onClick={() => setShowModal(false)}>
+              <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={20} style={{ display: 'block', width: '20px', height: '20px' }} />
+              </span>
+            </button>
           </div>
           
           <div className="modal-content">
@@ -460,7 +466,9 @@ export default function Dashboard() {
       {selectedPin && (
         <div className="pin-details-sheet">
           <button className="close-sheet-btn" onClick={() => setSelectedPin(null)}>
-            <X size={16} />
+            <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+               <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+            </span>
           </button>
           
           <div className="sheet-header">
@@ -516,7 +524,9 @@ export default function Dashboard() {
         <div className="action-modal-overlay">
           <div className="action-modal">
             <button className="btn-close" onClick={() => setShowMakePublicModal(false)}>
-              <X size={16} />
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
             </button>
             
             <div className="action-modal-header">
@@ -623,7 +633,9 @@ export default function Dashboard() {
         <div className="action-modal-overlay">
           <div className="action-modal">
             <button className="btn-close" onClick={() => setShowReportModal(false)}>
-              <X size={16} />
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
             </button>
             <div className="action-modal-header">
               <AlertTriangle size={20} color="#cf1010" />

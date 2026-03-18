@@ -4,7 +4,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f3f4f6;
+  background: white; /* Prevent inherit background gradient */
   font-family: 'Inter', sans-serif;
   overflow: hidden;
 }
@@ -304,7 +304,16 @@
   color: #111827;
 }
 
-/* Background Map Area */
+/* Force SVG visibility in admin buttons */
+.icon-action svg {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 16px;
+  height: 16px;
+}
+
+/* Interactive Background Map Area */
 .admin-map-area {
   position: absolute;
   top: 0;
@@ -312,22 +321,78 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: white; /* Clean background for the map SVG */
+  z-index: 1; /* Keep it behind the sidebar (z-index 50) */
+}
+
+/* Ensure map library elements take full size */
+.admin-map-area .react-transform-wrapper,
+.admin-map-area .react-transform-component {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.map-image {
+  max-width: none;
+  width: 1400px;
+}
+
+/* Map pins (Reused from Dashboard) */
+.map-pin {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e2e8f0;
-}
-
-.admin-bg-map {
-  max-width: none;
-  width: 1200px;
-  opacity: 0.5; /* Fade effect from screenshot */
-  filter: blur(8px); /* Blur effect mimicking the background */
-}
-
-.admin-map-overlay {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(203, 213, 225, 0.5); /* subtle grey-blue tint overlay */
+  border: 2px solid;
+  transform: translate(-50%, -50%);
   z-index: 10;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  z-index: 30;
+}
+
+.pin-tooltip {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #003056;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.pin-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #003056 transparent transparent transparent;
+}
+
+.map-pin:hover .pin-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.map-pin svg {
+  width: 20px;
+  height: 20px;
 }
