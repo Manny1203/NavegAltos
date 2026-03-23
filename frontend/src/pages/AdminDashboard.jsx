@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import mapImage from '../assets/mapa_universidad.jpeg';
+import rectoriaPB from '../assets/rectoria_pb.jpeg';
+import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import '../styles/admin-dashboard.css';
 
 export default function AdminDashboard() {
@@ -23,6 +25,10 @@ export default function AdminDashboard() {
   // Edit State
   const [editingPin, setEditingPin] = useState(null);
   const [selectedPin, setSelectedPin] = useState(null);
+
+  // Building State
+  const [currentBuilding, setCurrentBuilding] = useState(null); // null means 'main' map
+  const [selectedFloor, setSelectedFloor] = useState('PB'); // 'PB' or 'N1'
   
   // Checking Auth
   useEffect(() => {
@@ -113,6 +119,14 @@ export default function AdminDashboard() {
       alert('Error rechazando.');
     }
   };
+
+  const displayedPins = publicPins.filter(pin => {
+      const pinMap = pin.map_id || 'main';
+      if (currentBuilding) {
+          return pinMap === currentBuilding && pin.floor === selectedFloor;
+      }
+      return pinMap === 'main';
+  });
 
   const handleDeletePin = async (pinId) => {
     try {
@@ -384,7 +398,40 @@ export default function AdminDashboard() {
                   alt="Mapa Universitario" 
                   className="map-image"
                 />
-                {publicPins.map(pin => (
+                
+                {/* Botón estático para Rectoría */}
+                {!currentBuilding && (
+                  <button 
+                    style={{
+                      position: 'absolute',
+                      left: '52.5%',
+                      top: '66.5%',
+                      width: '44px',
+                      height: '44px',
+                      transform: 'translate(-50%, -50%)',
+                      borderRadius: '50%',
+                      backgroundColor: '#003056',
+                      color: 'white',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                      cursor: 'pointer',
+                      zIndex: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentBuilding('rectoria');
+                      setSelectedPin(null);
+                    }}
+                    title="Abrir Mapa de Rectoría"
+                  >
+                    <BookOpen size={20} />
+                  </button>
+                )}
+
+                {displayedPins.map(pin => (
                   <div 
                     key={pin.id} 
                     className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
@@ -402,6 +449,92 @@ export default function AdminDashboard() {
               </div>
             </TransformComponent>
           </TransformWrapper>
+          
+          {/* RECTORIA MODAL / OVERLAY FOR ADMINS */}
+          {currentBuilding === 'rectoria' && (
+            <div style={{
+              position: 'absolute', top: '2%', left: '2%', width: '96%', height: '96%',
+              backgroundColor: '#f1f5f9', borderRadius: '16px', zIndex: 90,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column',
+              overflow: 'hidden', border: '1px solid #e2e8f0'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '16px 20px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h2 style={{ margin: 0, color: '#003056', fontSize: '20px', fontWeight: 'bold' }}>Edificio de Rectoría</h2>
+                  <span style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px', display: 'block' }}>
+                    Gestión de Pines - {selectedFloor === 'PB' ? 'P. Baja' : '1er Nivel'}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                   {/* Floor Toggle */}
+                   <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                     <button 
+                      style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: selectedFloor === 'PB' ? '#E25E24' : 'transparent', color: selectedFloor === 'PB' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' }}
+                      onClick={() => setSelectedFloor('PB')}
+                     >PB</button>
+                     <button 
+                      style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: selectedFloor === 'N1' ? '#E25E24' : 'transparent', color: selectedFloor === 'N1' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' }}
+                      onClick={() => setSelectedFloor('N1')}
+                     >N1</button>
+                   </div>
+                   
+                   <button 
+                     style={{ background: '#f3f4f6', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                     onClick={() => { setCurrentBuilding(null); }}
+                   >
+                     <X size={18} color="#6b7280" />
+                   </button>
+                </div>
+              </div>
+              
+              {/* Internal Map Area */}
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <TransformWrapper
+                  initialScale={0.8}
+                  minScale={0.5}
+                  maxScale={3}
+                  centerOnInit={true}
+                  centerZoomedOut={true}
+                  limitToBounds={false}
+                >
+                  <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                    <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <img 
+                          src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
+                          alt="Rectoria" 
+                          className="rectoria-map-image"
+                          style={{ maxWidth: '700px', maxHeight: '60vh', objectFit: 'contain', display: 'block' }}
+                        />
+                        {displayedPins.map(pin => (
+                          <div 
+                            key={pin.id} 
+                            className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
+                            style={{ 
+                              left: `${pin.x || pin.x_coordinate}%`, 
+                              top: `${pin.y || pin.y_coordinate}%`, 
+                              borderColor: pin.color || '#333', 
+                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40` 
+                            }}
+                            title={pin.name || 'Pin'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPin(pin);
+                            }}
+                          >
+                            <div className="pin-tooltip">{pin.name}</div>
+                            {renderPinIcon(pin.icon, pin.color || '#333')}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TransformComponent>
+                </TransformWrapper>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -410,7 +543,7 @@ export default function AdminDashboard() {
         <div style={{
           position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)',
           width: '360px', background: 'white', borderRadius: '20px', padding: '24px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)', zIndex: 100
+          boxShadow: '0 10px 40px rgba(0,0,0,0.15)', zIndex: 1000
         }}>
           <button 
             style={{ position: 'absolute', top: '16px', right: '16px', background: '#f3f4f6', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
