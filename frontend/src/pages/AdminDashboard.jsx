@@ -91,7 +91,15 @@ export default function AdminDashboard() {
   const handleApprove = async (request) => {
     try {
       // 1. Make the pin public
-      const { error: pinError } = await supabase.from('pins').update({ is_public: true }).eq('id', request.pin_id);
+      const { error: pinError } = await supabase.from('pins').update({ 
+        is_public: true,
+        owner: request.requester_name || null,
+        description: request.description || null,
+        has_schedule: request.has_schedule || false,
+        open_time: request.open_time || null,
+        close_time: request.close_time || null,
+        available_days: request.available_days || null
+      }).eq('id', request.pin_id);
       if (pinError) throw pinError;
       
       // 2. Mark request as approved
@@ -299,21 +307,53 @@ export default function AdminDashboard() {
                 ) : (
                   requests.map(req => (
                     <div key={req.id} className="admin-card">
-                      <div className="admin-card-header">
-                        <div className="admin-card-icon req-icon">
+                      <div className="admin-card-header" style={{ alignItems: 'flex-start' }}>
+                        <div className="admin-card-icon req-icon" style={{ marginTop: '4px' }}>
                           <AlertTriangle size={14} color="#ef4444" />
                         </div>
-                        <div className="admin-card-title-group">
-                          <h5>{req.title || 'Nueva Solicitud'}</h5>
-                          <span className="admin-date">{new Date(req.created_at).toISOString().split('T')[0]}</span>
+                        <div className="admin-card-title-group" style={{ flex: 1 }}>
+                          <h5 style={{ fontSize: '15px' }}>{req.pins?.name || 'Solicitud de Pin'}</h5>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                            <span style={{ fontSize: '11px', background: '#e5e7eb', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                              {req.pins?.category?.toUpperCase() || 'SIN CATEGORÍA'}
+                            </span>
+                            <span className="admin-date" style={{ fontSize: '11px' }}>{new Date(req.created_at).toLocaleDateString('es-MX')}</span>
+                          </div>
                         </div>
                       </div>
-                      <p className="admin-card-desc">
-                        {req.description || 'Sin descripción.'}<br/>
-                        <span style={{ fontSize: '10px', color: '#6b7280', marginTop: '4px', display: 'block' }}>
-                          Por: {req.requester_name || req.requester_id}
-                        </span>
-                      </p>
+                      <div className="admin-card-desc" style={{ padding: '0', marginTop: '12px' }}>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', fontStyle: req.description ? 'normal' : 'italic' }}>
+                          {req.description || 'Sin descripción provista.'}
+                        </p>
+                        
+                        <div style={{ marginTop: '12px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                           <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
+                             <Users size={14} color="#6b7280" style={{ display: 'block', width: '14px', height: '14px' }} />
+                           </span>
+                           <span style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold' }}>{req.requester_name || 'Desconocido'}</span>
+                          </div>
+                          
+                          {req.has_schedule ? (
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                              <div>
+                                <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold', display: 'block' }}>HORARIO</span>
+                                <span style={{ fontSize: '12px', color: '#334155' }}>{req.open_time?.slice(0,5)} - {req.close_time?.slice(0,5)}</span>
+                              </div>
+                              <div>
+                                <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold', display: 'block' }}>DÍAS</span>
+                                <span style={{ fontSize: '12px', color: '#334155' }}>
+                                  {Array.isArray(req.available_days) 
+                                    ? req.available_days.join(', ') 
+                                    : (typeof req.available_days === 'string' ? JSON.parse(req.available_days).join(', ') : 'No espec.')}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>Sin horario de disponibilidad</span>
+                          )}
+                        </div>
+                      </div>
                       <div className="admin-card-actions">
                         <button className="btn-reject" onClick={() => handleReject(req)}>Rechazar</button>
                         <button className="btn-approve" onClick={() => handleApprove(req)}>Aprobar</button>

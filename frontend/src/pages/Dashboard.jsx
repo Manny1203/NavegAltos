@@ -33,6 +33,7 @@ export default function Dashboard() {
 
   // Modals state
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
+  const [publicPinData, setPublicPinData] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
 
   // Make Public Form State
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [openTime, setOpenTime] = useState('');
   const [closeTime, setCloseTime] = useState('');
   const [ownerName, setOwnerName] = useState('');
+  const [pinDescription, setPinDescription] = useState('');
   const [availableDays, setAvailableDays] = useState(['L', 'M', 'Mi', 'J', 'V']);
   const [pinCategory, setPinCategory] = useState('Académico');
 
@@ -637,7 +639,16 @@ export default function Dashboard() {
           
           <div className="sheet-header">
             <h3>{selectedPin.name}</h3>
-            <span className="sheet-subtitle">Centro Universitario de los Altos</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+              <span className="sheet-subtitle" style={{ margin: 0 }}>
+                {selectedPin.category ? selectedPin.category.toUpperCase() : 'SIN CATEGORÍA'}
+              </span>
+              {selectedPin.owner && (
+                <span style={{ fontSize: '13px', color: '#003056', fontWeight: '600' }}>
+                  De: {selectedPin.owner}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="sheet-stats">
@@ -651,11 +662,32 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {selectedPin.has_schedule && (
+            <div style={{ display: 'flex', gap: '12px', padding: '12px 16px', background: '#f8fafc', borderRadius: '12px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>
+                  <Clock size={12} /> HORARIO
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
+                  {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
+                </span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
+                  {Array.isArray(selectedPin.available_days) 
+                    ? selectedPin.available_days.join(', ') 
+                    : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="sheet-actions-secondary">
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
             {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
-                <button className="btn-secondary btn-public" onClick={() => setShowMakePublicModal(true)}>
+                <button className="btn-secondary btn-public" onClick={() => { setPublicPinData(selectedPin); setShowMakePublicModal(true); }}>
                   <Globe size={14} /> Hacer Público
                 </button>
                 <button className="btn-secondary btn-danger" onClick={async () => {
@@ -733,6 +765,17 @@ export default function Dashboard() {
             </div>
 
             <div className="action-form-group">
+              <label>DESCRIPCIÓN (Opcional)</label>
+              <textarea 
+                className="auth-input" 
+                placeholder="Agrega notas o detalles sobre el pin" 
+                value={pinDescription} 
+                onChange={(e) => setPinDescription(e.target.value)}
+                style={{ height: '60px', resize: 'none' }}
+              />
+            </div>
+
+            <div className="action-form-group">
               <label>DÍAS DISPONIBLE</label>
               <div className="days-selector">
                 {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => (
@@ -762,13 +805,17 @@ export default function Dashboard() {
                 return;
               }
               
-              if (!currentUser) return;
+              if (!currentUser || !publicPinData) {
+                alert('Error de sesión o pin no seleccionado.');
+                return;
+              }
               
               try {
                 const requestData = {
-                  pin_id: selectedPin.id,
+                  pin_id: publicPinData.id,
                   requester_id: currentUser.id,
                   requester_name: ownerName,
+                  description: pinDescription,
                   request_reason: 'Solicitud para hacer el pin público.',
                   has_schedule: hasSchedule,
                   open_time: openTime || null,
@@ -784,6 +831,7 @@ export default function Dashboard() {
                 alert('Solicitud enviada a revisión exitosamente.');
                 setShowMakePublicModal(false);
                 setOwnerName('');
+                setPinDescription('');
                 setHasSchedule(false);
               } catch (e) {
                 console.error("Error pidiendo pin público: ", e);
