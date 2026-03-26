@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
   const [publicPinData, setPublicPinData] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [reportPinData, setReportPinData] = useState(null);
 
   // Make Public Form State
   const [hasSchedule, setHasSchedule] = useState(false);
@@ -136,12 +137,14 @@ export default function Dashboard() {
       setModalType(filterLabel);
       setShowModal(true);
       setMarkerMode(false);
+      setSelectedPin(null);
     }
   };
 
   const toggleMarkerMode = () => {
     setMarkerMode(!markerMode);
     setShowPinModal(false);
+    setSelectedPin(null);
     if (!markerMode) {
       setActiveFilter(null);
       setShowModal(false);
@@ -165,11 +168,11 @@ export default function Dashboard() {
       
       {/* Search Bar (formerly below navbar) */}
       <div className="floating-ui top-bar">
-        <button className="icon-btn" onClick={() => setShowMenuSidebar(!showMenuSidebar)}>
+        <button className="icon-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
           <Menu size={24} />
         </button>
         
-        <div className="search-bar-container" onClick={() => { setShowModal(true); setModalType('frecuentes'); setMarkerMode(false); }}>
+        <div className="search-bar-container" onClick={() => { setShowModal(true); setModalType('frecuentes'); setMarkerMode(false); setSelectedPin(null); }}>
           <Search size={20} color="#9ca3af" />
           <input 
             type="text" 
@@ -346,7 +349,7 @@ export default function Dashboard() {
         </button>
         <button 
           className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`} 
-          onClick={() => setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public')}
+          onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
           style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
           title="Ver pines públicos"
         >
@@ -361,6 +364,7 @@ export default function Dashboard() {
               return;
             }
             setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
+            setSelectedPin(null);
           }}
           style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
           title="Mis pines privados"
@@ -687,7 +691,7 @@ export default function Dashboard() {
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
             {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
-                <button className="btn-secondary btn-public" onClick={() => { setPublicPinData(selectedPin); setShowMakePublicModal(true); }}>
+                <button className="btn-secondary btn-public" onClick={() => { setPublicPinData(selectedPin); setShowMakePublicModal(true); setSelectedPin(null); }}>
                   <Globe size={14} /> Hacer Público
                 </button>
                 <button className="btn-secondary btn-danger" onClick={async () => {
@@ -702,7 +706,7 @@ export default function Dashboard() {
               </>
             ) : (
               /* Public pin (even if owner sent it to review) or other user's pin: show Reportar */
-              <button className="btn-report" onClick={() => setShowReportModal(true)}>
+              <button className="btn-report" onClick={() => { setReportPinData(selectedPin); setShowReportModal(true); setSelectedPin(null); }}>
                 <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
                   <AlertTriangle size={14} style={{ display: 'block', width: '14px', height: '14px' }} />
                 </span>
@@ -876,7 +880,7 @@ export default function Dashboard() {
               }
               try {
                 const { error } = await supabase.from('pin_reports').insert([{
-                  pin_id: selectedPin.id,
+                  pin_id: reportPinData?.id || selectedPin?.id,
                   reporter_id: currentUser?.id || null,
                   reason: reportReason.trim(),
                   status: 'pending'
