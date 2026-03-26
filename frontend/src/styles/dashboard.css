@@ -155,7 +155,7 @@
   outline: none;
   width: 100%;
   font-size: 14px;
-  color: #4b5563;
+  color: #000000;
   background: transparent;
 }
 .search-input::placeholder {
@@ -430,11 +430,11 @@
   padding: 14px;
   border-radius: 12px;
   border: 1px solid #f3f4f6;
-  background: #f9fafb;
+  background: #ffffff;
   font-size: 15px;
   margin-bottom: 24px;
   outline: none;
-  color: #333;
+  color: #000000;
 }
 .pin-name-input:focus {
   border-color: #003056;

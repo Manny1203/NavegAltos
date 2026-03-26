@@ -85,7 +85,8 @@ body {
   font-size: 14px;
   outline: none;
   transition: all 0.2s ease;
-  color: #4b5563;
+  color: #000000;
+  background-color: #ffffff;
 }
 
 .auth-input::placeholder {

@@ -639,7 +639,7 @@ export default function AdminDashboard() {
                 type="text" 
                 value={editingPin.name || ''} 
                 onChange={(e) => setEditingPin({...editingPin, name: e.target.value})}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#f9fafb', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -648,7 +648,7 @@ export default function AdminDashboard() {
               <select 
                 value={editingPin.category || ''} 
                 onChange={(e) => setEditingPin({...editingPin, category: e.target.value})}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#f9fafb', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               >
                 <option value="aulas">Aulas</option>
                 <option value="canchas">Canchas</option>
