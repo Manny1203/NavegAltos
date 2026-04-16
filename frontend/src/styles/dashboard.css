@@ -162,6 +162,28 @@
   color: #9ca3af;
 }
 
+/* Zoom Controls */
+.zoom-controls {
+  right: 24px;
+  bottom: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zoom-controls .icon-btn {
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  background-color: white;
+  color: #003056;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-controls .icon-btn:hover {
+  background-color: #f3f4f6;
+}
+
 /* Right Sidebar Buttons */
 .right-sidebar {
   right: 24px;

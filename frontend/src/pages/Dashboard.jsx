@@ -4,7 +4,7 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { 
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X, 
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus
 } from 'lucide-react';
 import mapImage from '../assets/mapa_universidad.jpeg';
 import rectoriaPB from '../assets/rectoria_pb.jpeg';
@@ -124,7 +124,9 @@ export default function Dashboard() {
     { id: 'cafeteria', label: 'Cafetería' },
     { id: 'aulas', label: 'Aulas' },
     { id: 'banos', label: 'Baños' },
-    { id: 'laboratorios', label: 'Laboratorios' }
+    { id: 'laboratorios', label: 'Laboratorios' },
+    { id: 'alimentos', label: 'Alimentos' },
+    { id: 'otros', label: 'Otros' }
   ];
 
   const handleFilterClick = (id) => {
@@ -159,6 +161,8 @@ export default function Dashboard() {
       case 'coffee': return <Coffee color={color} />;
       case 'car': return <Car color={color} />;
       case 'microscope': return <Microscope color={color} />;
+      case 'utensils': return <Utensils color={color} />;
+      case 'help-circle': return <HelpCircle color={color} />;
       default: return <MapPin color={color} />;
     }
   };
@@ -257,7 +261,7 @@ export default function Dashboard() {
           <div className="modal-section-title">CATEGORÍA</div>
           <select 
             className="pin-name-input" 
-            style={{ marginBottom: '16px', background: 'white' }}
+            style={{ marginBottom: '16px', background: 'white', fontFamily: "'Inter', sans-serif" }}
             value={newPinCategory}
             onChange={(e) => setNewPinCategory(e.target.value)}
           >
@@ -268,7 +272,7 @@ export default function Dashboard() {
 
           <div className="modal-section-title">ICONO Y COLOR</div>
           <div className="pin-options-row">
-            {['pin', 'coffee', 'car', 'book', 'microscope'].map(icon => (
+            {['pin', 'coffee', 'car', 'book', 'microscope', 'utensils', 'help-circle'].map(icon => (
               <div 
                 key={icon}
                 className={`pin-option-btn icon-option ${selectedIcon === icon ? 'selected' : ''}`}
@@ -455,8 +459,21 @@ export default function Dashboard() {
           limitToBounds={true}
           disabled={markerMode}
         >
-          <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
+          {({ zoomIn, zoomOut }) => (
+            <React.Fragment>
+              {/* Controles de Zoom para mapa principal */}
+              <div className="floating-ui zoom-controls">
+                <button className="icon-btn sidebar-btn" onClick={(e) => { e.stopPropagation(); zoomIn(0.2); }}>
+                  <Plus size={24} />
+                  <span className="sidebar-tooltip">Acercar</span>
+                </button>
+                <button className="icon-btn sidebar-btn" onClick={(e) => { e.stopPropagation(); zoomOut(0.2); }}>
+                  <Minus size={24} />
+                  <span className="sidebar-tooltip">Alejar</span>
+                </button>
+              </div>
+              <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
               <img 
                 src={mapImage} 
                 alt="Mapa Universitario" 
@@ -515,6 +532,8 @@ export default function Dashboard() {
             ))}
             </div>
           </TransformComponent>
+          </React.Fragment>
+        )}
         </TransformWrapper>
       </div>
 
@@ -594,9 +613,21 @@ export default function Dashboard() {
               limitToBounds={false}
               disabled={markerMode}
             >
-              <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
+              {({ zoomIn, zoomOut }) => (
+                <React.Fragment>
+                  <div className="floating-ui zoom-controls" style={{ right: '40px', bottom: '40px' }}>
+                    <button className="icon-btn sidebar-btn" onClick={(e) => { e.stopPropagation(); zoomIn(0.2); }}>
+                      <Plus size={24} />
+                      <span className="sidebar-tooltip">Acercar</span>
+                    </button>
+                    <button className="icon-btn sidebar-btn" onClick={(e) => { e.stopPropagation(); zoomOut(0.2); }}>
+                      <Minus size={24} />
+                      <span className="sidebar-tooltip">Alejar</span>
+                    </button>
+                  </div>
+                  <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                    <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
                     <img 
                       src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
                       alt="Rectoria" 
@@ -627,6 +658,8 @@ export default function Dashboard() {
                   </div>
                 </div>
               </TransformComponent>
+              </React.Fragment>
+              )}
             </TransformWrapper>
           </div>
         </div>
@@ -796,7 +829,7 @@ export default function Dashboard() {
 
             <div className="action-form-group">
               <label>CATEGORÍA</label>
-              <select className="auth-input" value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
+              <select className="auth-input" style={{ fontFamily: "'Inter', sans-serif" }} value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
                 {filters.map(f => (
                   <option key={f.id} value={f.id}>{f.label}</option>
                 ))}
