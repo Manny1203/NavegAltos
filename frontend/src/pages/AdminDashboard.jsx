@@ -6,7 +6,7 @@ import {
   Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import mapImage from '../assets/mapa_universidad.jpeg';
+import mapImage from '../assets/mapaUniversidadVector.svg';
 import rectoriaPB from '../assets/rectoria_pb.jpeg';
 import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import '../styles/admin-dashboard.css';

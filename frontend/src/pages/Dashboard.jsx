@@ -6,7 +6,7 @@ import {
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
   AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus
 } from 'lucide-react';
-import mapImage from '../assets/mapa_universidad.jpeg';
+import mapImage from '../assets/mapaUniversidadVector.svg';
 import rectoriaPB from '../assets/rectoria_pb.jpeg';
 import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import { supabase } from '../lib/supabase';
