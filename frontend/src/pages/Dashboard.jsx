@@ -1,23 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { 
-  Menu, Search, Plus, Map as MapIcon, Globe, Lock, X, 
+import {
+  Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
   AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus
 } from 'lucide-react';
-import mapImage from '../assets/mapaUniversidadVector.svg';
+import mapImage from '../assets/mapaUniversidadVectorEdificios.svg';
+import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
+import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
+import mapImageC from '../assets/mapaUniversidadVectorEdificioC.svg';
+import mapImageD from '../assets/mapaUniversidadVectorEdificioD.svg';
+import mapImageE from '../assets/mapaUniversidadVectorEdificioE.svg';
+import mapImageF from '../assets/mapaUniversidadVectorEdificioF.svg';
+import mapImageG from '../assets/mapaUniversidadVectorEdificioG.svg';
+import mapImageH from '../assets/mapaUniversidadVectorEdificioH.svg';
+import mapImageI from '../assets/mapaUniversidadVectorEdificioI.svg';
+import mapImageJ from '../assets/mapaUniversidadVectorEdificioJ.svg';
+import mapImageK from '../assets/mapaUniversidadVectorEdificioK.svg';
 import rectoriaPB from '../assets/rectoria_pb.jpeg';
 import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import { supabase } from '../lib/supabase';
 import '../styles/dashboard.css';
+
+const buildingMaps = {
+  main: mapImage,
+  A: mapImageA, B: mapImageB, C: mapImageC, D: mapImageD,
+  E: mapImageE, F: mapImageF, G: mapImageG, H: mapImageH,
+  I: mapImageI, J: mapImageJ, K: mapImageK
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(null); 
+  const [modalType, setModalType] = useState(null);
   const [markerMode, setMarkerMode] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [newPinPos, setNewPinPos] = useState(null);
@@ -48,9 +66,9 @@ export default function Dashboard() {
 
   // Report Form State
   const [reportReason, setReportReason] = useState('');
-  
+
   const [userPins, setUserPins] = useState([]);
-  
+
   // Pin Creator State
   const [newPinName, setNewPinName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('pin');
@@ -59,6 +77,11 @@ export default function Dashboard() {
 
   // Admin logic
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Buildings dropdown state
+  const [activeHighlight, setActiveHighlight] = useState('main');
+  const [showBuildings, setShowBuildings] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchPins();
@@ -88,7 +111,7 @@ export default function Dashboard() {
   const fetchPins = async () => {
     try {
       let query = supabase.from('pins').select('*');
-      
+
       // If a category filter is active, filter pins by it
       if (activeFilter) {
         query = query.eq('category', activeFilter);
@@ -112,11 +135,20 @@ export default function Dashboard() {
   };
 
   const displayedPins = userPins.filter(pin => {
-      const pinMap = pin.map_id || 'main';
-      if (currentBuilding) {
-          return pinMap === currentBuilding && pin.floor === selectedFloor;
-      }
-      return pinMap === 'main';
+    const pinMap = pin.map_id || 'main';
+    let isCorrectMap = false;
+    if (currentBuilding) {
+      isCorrectMap = (pinMap === currentBuilding && pin.floor === selectedFloor);
+    } else {
+      isCorrectMap = (pinMap === 'main');
+    }
+    if (!isCorrectMap) return false;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
+    }
+    return true;
   });
 
   const filters = [
@@ -169,25 +201,26 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      
+
       {/* Search Bar (formerly below navbar) */}
       <div className="floating-ui top-bar">
         <button className="icon-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
           <Menu size={24} />
         </button>
-        
-        <div className="search-bar-container" onClick={() => { setShowModal(true); setModalType('frecuentes'); setMarkerMode(false); setSelectedPin(null); }}>
+
+        <div className="search-bar-container" style={{ cursor: 'text' }}>
           <Search size={20} color="#9ca3af" />
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Buscar ubicación..." 
-            readOnly 
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Buscar ubicación..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <button 
-          className="icon-btn" 
+
+        <button
+          className="icon-btn"
           onClick={toggleMarkerMode}
           style={{ background: markerMode ? '#E25E24' : 'white', color: markerMode ? 'white' : '#333' }}
         >
@@ -210,7 +243,7 @@ export default function Dashboard() {
             </div>
             <div className="menu-sidebar-content">
               {isAdmin && (
-                <button 
+                <button
                   className="menu-sidebar-item"
                   onClick={() => navigate('/admin')}
                   style={{ marginBottom: '16px' }}
@@ -222,7 +255,7 @@ export default function Dashboard() {
                   </div>
                 </button>
               )}
-              <button 
+              <button
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
                 style={{ color: '#cf1010', marginTop: 'auto' }}
@@ -238,29 +271,60 @@ export default function Dashboard() {
         </>
       )}
 
-        {/* Marker Mode helper banner */}
-        {markerMode && !showPinModal && (
-          <div className="marker-mode-banner floating-ui" style={{ top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 999 }}>
-            <MapPin size={24} className="marker-mode-icon" />
-            <span className="marker-mode-title">Modo Marcador</span>
-            <span className="marker-mode-subtitle">Toca el mapa para ubicar tu nuevo punto</span>
+      {/* Marker Mode helper banner */}
+      {markerMode && !showPinModal && (
+        <div className="marker-mode-banner floating-ui" style={{ top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 999 }}>
+          <MapPin size={24} className="marker-mode-icon" />
+          <span className="marker-mode-title">Modo Marcador</span>
+          <span className="marker-mode-subtitle">Toca el mapa para ubicar tu nuevo punto</span>
+        </div>
+      )}
+
+      {/* Edificios Left Sidebar */}
+      {!currentBuilding && (
+        <div className="floating-ui" style={{ top: '140px', left: '24px', zIndex: 40, width: '180px' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+            <button
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', background: showBuildings ? '#e5e7eb' : '#f3f4f6', borderRadius: '8px', fontWeight: 'bold', color: '#003056', cursor: 'pointer', border: 'none' }}
+              onClick={() => setShowBuildings(!showBuildings)}
+            >
+              Edificios <Minus size={16} style={{ transform: showBuildings ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </button>
+            {showBuildings && (
+              <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px', maxHeight: '350px', overflowY: 'auto', gap: '4px' }}>
+                <button
+                  onClick={() => { setActiveHighlight('main'); setShowBuildings(false); }}
+                  style={{ padding: '8px 12px', textAlign: 'left', borderRadius: '6px', background: activeHighlight === 'main' ? '#003056' : 'transparent', color: activeHighlight === 'main' ? 'white' : '#4b5563', fontWeight: '600', cursor: 'pointer', border: 'none' }}
+                >Vista General</button>
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
+                  <button
+                    key={letter}
+                    onClick={() => { setActiveHighlight(letter); setShowBuildings(false); }}
+                    style={{ padding: '8px 12px', textAlign: 'left', borderRadius: '6px', background: activeHighlight === letter ? '#003056' : 'transparent', color: activeHighlight === letter ? 'white' : '#4b5563', fontWeight: '600', cursor: 'pointer', border: 'none' }}
+                  >
+                    Edificio {letter}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
       {/* Pin Creator Modal */}
       {showPinModal && (
         <div className="pin-creator-modal floating-ui" style={{ zIndex: 1000 }}>
           <div className="modal-section-title">NOMBRE</div>
-          <input 
-            type="text" 
-            className="pin-name-input" 
+          <input
+            type="text"
+            className="pin-name-input"
             placeholder="Ej. Mi salón favorito"
             value={newPinName}
             onChange={(e) => setNewPinName(e.target.value)}
           />
 
           <div className="modal-section-title">CATEGORÍA</div>
-          <select 
-            className="pin-name-input" 
+          <select
+            className="pin-name-input"
             style={{ marginBottom: '16px', background: 'white', fontFamily: "'Inter', sans-serif" }}
             value={newPinCategory}
             onChange={(e) => setNewPinCategory(e.target.value)}
@@ -273,7 +337,7 @@ export default function Dashboard() {
           <div className="modal-section-title">ICONO Y COLOR</div>
           <div className="pin-options-row">
             {['pin', 'coffee', 'car', 'book', 'microscope', 'utensils', 'help-circle'].map(icon => (
-              <div 
+              <div
                 key={icon}
                 className={`pin-option-btn icon-option ${selectedIcon === icon ? 'selected' : ''}`}
                 onClick={() => setSelectedIcon(icon)}
@@ -282,10 +346,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          
+
           <div className="pin-options-row">
             {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
-              <div 
+              <div
                 key={color}
                 className={`pin-option-btn color-option ${selectedColor === color ? 'selected' : ''}`}
                 style={{ backgroundColor: color, borderColor: selectedColor === color ? '#333' : 'transparent' }}
@@ -307,7 +371,7 @@ export default function Dashboard() {
               try {
                 // Get the logged in user
                 const { data: { session } } = await supabase.auth.getSession();
-                
+
                 const newPin = {
                   user_id: session?.user?.id || null, // Optional if we allow anonymous, but RLS protects it normally
                   name: newPinName,
@@ -325,7 +389,7 @@ export default function Dashboard() {
                   .from('pins')
                   .insert([newPin])
                   .select();
-                  
+
                 if (error) throw error;
 
                 if (data && data.length > 0) {
@@ -351,8 +415,8 @@ export default function Dashboard() {
           <MapIcon size={24} />
           <span className="sidebar-tooltip">Mapa</span>
         </button>
-        <button 
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`} 
+        <button
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`}
           onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
           style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
           title="Ver pines públicos"
@@ -360,8 +424,8 @@ export default function Dashboard() {
           <Globe size={24} />
           <span className="sidebar-tooltip">Pines Públicos</span>
         </button>
-        <button 
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`} 
+        <button
+          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
           onClick={() => {
             if (!currentUser) {
               alert("Debes iniciar sesión para ver tus pines privados.");
@@ -381,7 +445,7 @@ export default function Dashboard() {
       {/* Bottom Filters */}
       <div className="floating-ui bottom-filters">
         {filters.map(filter => (
-          <button 
+          <button
             key={filter.id}
             className={`filter-chip ${activeFilter === filter.id ? 'active' : ''}`}
             onClick={() => handleFilterClick(filter.id)}
@@ -404,7 +468,7 @@ export default function Dashboard() {
               </span>
             </button>
           </div>
-          
+
           <div className="modal-content">
             {userPins.length > 0 ? (
               userPins.map(pin => (
@@ -429,7 +493,7 @@ export default function Dashboard() {
       )}
 
       {/* Interactive Map Area */}
-      <div 
+      <div
         style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 1, cursor: markerMode ? 'crosshair' : 'default' }}
         onClick={(e) => {
           if (markerMode && !showPinModal) {
@@ -474,66 +538,66 @@ export default function Dashboard() {
               </div>
               <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-              <img 
-                src={mapImage} 
-                alt="Mapa Universitario" 
-                className="map-image"
-              />
-              
-              {/* Botón estático para Rectoría */}
-              {!currentBuilding && (
-                <button 
-                  style={{
-                    position: 'absolute',
-                    left: '52.5%',
-                    top: '66.5%',
-                    width: '44px',
-                    height: '44px',
-                    transform: 'translate(-50%, -50%)',
-                    borderRadius: '50%',
-                    backgroundColor: '#003056',
-                    color: 'white',
-                    border: '3px solid white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentBuilding('rectoria');
-                    setMarkerMode(false);
-                    setSelectedPin(null);
-                  }}
-                  title="Abrir Mapa de Rectoría"
-                >
-                  <MapPin size={20} />
-                </button>
-              )}
+                  <img
+                    src={buildingMaps[activeHighlight] || mapImage}
+                    alt="Mapa Universitario"
+                    className="map-image"
+                  />
 
-            {/* Render dynamically fetched user Pins based on current building */}
-            {displayedPins.map(pin => (
-              <div 
-                key={pin.id} 
-                className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
-                style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color, boxShadow: `0 4px 12px ${pin.color}40` }}
-                title={pin.name || 'Pin'}
-                onClick={(e) => {
-                  e.stopPropagation(); // Avoid triggering map click
-                  setSelectedPin(pin);
-                  setMarkerMode(false);
-                }}
-              >
-                <div className="pin-tooltip">{pin.name}</div>
-                {renderPinIcon(pin.icon, pin.color)}
-              </div>
-            ))}
-            </div>
-          </TransformComponent>
-          </React.Fragment>
-        )}
+                  {/* Botón estático para Rectoría */}
+                  {!currentBuilding && (
+                    <button
+                      style={{
+                        position: 'absolute',
+                        left: '52.5%',
+                        top: '66.5%',
+                        width: '44px',
+                        height: '44px',
+                        transform: 'translate(-50%, -50%)',
+                        borderRadius: '50%',
+                        backgroundColor: '#003056',
+                        color: 'white',
+                        border: '3px solid white',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentBuilding('rectoria');
+                        setMarkerMode(false);
+                        setSelectedPin(null);
+                      }}
+                      title="Abrir Mapa de Rectoría"
+                    >
+                      <MapPin size={20} />
+                    </button>
+                  )}
+
+                  {/* Render dynamically fetched user Pins based on current building */}
+                  {displayedPins.map(pin => (
+                    <div
+                      key={pin.id}
+                      className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
+                      style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color, boxShadow: `0 4px 12px ${pin.color}40` }}
+                      title={pin.name || 'Pin'}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Avoid triggering map click
+                        setSelectedPin(pin);
+                        setMarkerMode(false);
+                      }}
+                    >
+                      <div className="pin-tooltip">{pin.name}</div>
+                      {renderPinIcon(pin.icon, pin.color)}
+                    </div>
+                  ))}
+                </div>
+              </TransformComponent>
+            </React.Fragment>
+          )}
         </TransformWrapper>
       </div>
 
@@ -553,37 +617,37 @@ export default function Dashboard() {
                 Plano de Planta - {selectedFloor === 'PB' ? 'P. Baja' : '1er Nivel'}
               </span>
             </div>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-               {/* Floor Toggle */}
-               <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
-                 <button 
+              {/* Floor Toggle */}
+              <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                <button
                   style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: selectedFloor === 'PB' ? '#E25E24' : 'transparent', color: selectedFloor === 'PB' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
                   onClick={() => setSelectedFloor('PB')}
-                 >PB</button>
-                 <button 
+                >PB</button>
+                <button
                   style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: selectedFloor === 'N1' ? '#E25E24' : 'transparent', color: selectedFloor === 'N1' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
                   onClick={() => setSelectedFloor('N1')}
-                 >N1</button>
-               </div>
-               
-               <button 
-                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: markerMode ? '#E25E24' : '#f8fafc', color: markerMode ? 'white' : '#003056', border: '1px solid #e2e8f0', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
-                 onClick={() => setMarkerMode(!markerMode)}
-               >
-                 {markerMode ? <X size={16} /> : <Plus size={16} />}
-                 {markerMode ? 'Cancelar' : 'Agregar Pin'}
-               </button>
-               
-               <button 
-                 style={{ background: '#f3f4f6', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                 onClick={() => { setCurrentBuilding(null); setMarkerMode(false); }}
-               >
-                 <X size={20} color="#6b7280" />
-               </button>
+                >N1</button>
+              </div>
+
+              <button
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: markerMode ? '#E25E24' : '#f8fafc', color: markerMode ? 'white' : '#003056', border: '1px solid #e2e8f0', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                onClick={() => setMarkerMode(!markerMode)}
+              >
+                {markerMode ? <X size={16} /> : <Plus size={16} />}
+                {markerMode ? 'Cancelar' : 'Agregar Pin'}
+              </button>
+
+              <button
+                style={{ background: '#f3f4f6', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                onClick={() => { setCurrentBuilding(null); setMarkerMode(false); }}
+              >
+                <X size={20} color="#6b7280" />
+              </button>
             </div>
           </div>
-          
+
           {/* Internal Map Area */}
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: markerMode ? 'crosshair' : 'default' }}
             onClick={(e) => {
@@ -628,37 +692,37 @@ export default function Dashboard() {
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                     <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img 
-                      src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
-                      alt="Rectoria" 
-                      className="rectoria-map-image"
-                      style={{ maxWidth: '800px', maxHeight: '70vh', objectFit: 'contain', display: 'block' }}
-                    />
-                    {displayedPins.map(pin => (
-                      <div 
-                        key={pin.id} 
-                        className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
-                        style={{ 
-                          left: `${pin.x || pin.x_coordinate}%`, 
-                          top: `${pin.y || pin.y_coordinate}%`, 
-                          borderColor: pin.color || '#333', 
-                          boxShadow: `0 4px 12px ${(pin.color || '#333')}40` 
-                        }}
-                        title={pin.name || 'Pin'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPin(pin);
-                          setMarkerMode(false);
-                        }}
-                      >
-                        <div className="pin-tooltip">{pin.name}</div>
-                        {renderPinIcon(pin.icon, pin.color || '#333')}
+                        <img
+                          src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
+                          alt="Rectoria"
+                          className="rectoria-map-image"
+                          style={{ maxWidth: '800px', maxHeight: '70vh', objectFit: 'contain', display: 'block' }}
+                        />
+                        {displayedPins.map(pin => (
+                          <div
+                            key={pin.id}
+                            className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
+                            style={{
+                              left: `${pin.x || pin.x_coordinate}%`,
+                              top: `${pin.y || pin.y_coordinate}%`,
+                              borderColor: pin.color || '#333',
+                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40`
+                            }}
+                            title={pin.name || 'Pin'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPin(pin);
+                              setMarkerMode(false);
+                            }}
+                          >
+                            <div className="pin-tooltip">{pin.name}</div>
+                            {renderPinIcon(pin.icon, pin.color || '#333')}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </TransformComponent>
-              </React.Fragment>
+                    </div>
+                  </TransformComponent>
+                </React.Fragment>
               )}
             </TransformWrapper>
           </div>
@@ -673,7 +737,7 @@ export default function Dashboard() {
               <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
             </span>
           </button>
-          
+
           <div className="sheet-header">
             <h3>{selectedPin.name}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
@@ -712,8 +776,8 @@ export default function Dashboard() {
               <div style={{ flex: 1 }}>
                 <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
-                  {Array.isArray(selectedPin.available_days) 
-                    ? selectedPin.available_days.join(', ') 
+                  {Array.isArray(selectedPin.available_days)
+                    ? selectedPin.available_days.join(', ')
                     : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
                 </span>
               </div>
@@ -728,7 +792,7 @@ export default function Dashboard() {
                   <Globe size={14} /> Hacer Público
                 </button>
                 <button className="btn-secondary btn-danger" onClick={async () => {
-                  if(window.confirm('¿Seguro que quieres borrar este pin?')) {
+                  if (window.confirm('¿Seguro que quieres borrar este pin?')) {
                     await supabase.from('pins').delete().eq('id', selectedPin.id);
                     setUserPins(userPins.filter(p => p.id !== selectedPin.id));
                     setSelectedPin(null);
@@ -765,7 +829,7 @@ export default function Dashboard() {
                 <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
               </span>
             </button>
-            
+
             <div className="action-modal-header">
               <Globe size={20} color="#E25E24" />
               <h3>Hacer Público</h3>
@@ -775,10 +839,10 @@ export default function Dashboard() {
             </p>
 
             <label className="checkbox-group">
-              <input 
-                type="checkbox" 
-                checked={hasSchedule} 
-                onChange={(e) => setHasSchedule(e.target.checked)} 
+              <input
+                type="checkbox"
+                checked={hasSchedule}
+                onChange={(e) => setHasSchedule(e.target.checked)}
               />
               ¿Tiene horario de disponibilidad?
             </label>
@@ -803,10 +867,10 @@ export default function Dashboard() {
 
             <div className="action-form-group">
               <label>DESCRIPCIÓN (Opcional)</label>
-              <textarea 
-                className="auth-input" 
-                placeholder="Agrega notas o detalles sobre el pin" 
-                value={pinDescription} 
+              <textarea
+                className="auth-input"
+                placeholder="Agrega notas o detalles sobre el pin"
+                value={pinDescription}
                 onChange={(e) => setPinDescription(e.target.value)}
                 style={{ height: '60px', resize: 'none' }}
               />
@@ -816,7 +880,7 @@ export default function Dashboard() {
               <label>DÍAS DISPONIBLE</label>
               <div className="days-selector">
                 {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => (
-                  <button 
+                  <button
                     key={day}
                     className={`day-btn ${availableDays.includes(day) ? 'selected' : ''}`}
                     onClick={() => setAvailableDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
@@ -841,12 +905,12 @@ export default function Dashboard() {
                 alert('Por favor, indica a quién le pertenece este pin.');
                 return;
               }
-              
+
               if (!currentUser || !publicPinData) {
                 alert('Error de sesión o pin no seleccionado.');
                 return;
               }
-              
+
               try {
                 const requestData = {
                   pin_id: publicPinData.id,
@@ -860,11 +924,11 @@ export default function Dashboard() {
                   available_days: availableDays,
                   status: 'pending'
                 };
-                
+
                 const { error } = await supabase.from('pin_requests').insert([requestData]);
-                
+
                 if (error) throw error;
-                
+
                 alert('Solicitud enviada a revisión exitosamente.');
                 setShowMakePublicModal(false);
                 setOwnerName('');
@@ -899,15 +963,15 @@ export default function Dashboard() {
             </p>
             <div className="action-form-group">
               <label>RAZÓN DEL REPORTE</label>
-              <textarea 
-                className="auth-input" 
-                placeholder="Escribe los detalles aquí..." 
+              <textarea
+                className="auth-input"
+                placeholder="Escribe los detalles aquí..."
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
               />
             </div>
             <button className="btn-primary-large" style={{ background: '#cf1010' }} onClick={async () => {
-              if(!reportReason.trim()) {
+              if (!reportReason.trim()) {
                 alert('Por favor, escribe una razón para el reporte.');
                 return;
               }

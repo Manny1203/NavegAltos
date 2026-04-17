@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { 
+import {
   Menu, X, MapPin, Users, AlertTriangle, Flag,
   Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope
 } from 'lucide-react';
@@ -16,12 +16,13 @@ export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('requests'); // 'requests', 'public_pins'
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+
   // Data states
   const [requests, setRequests] = useState([]);
   const [publicPins, setPublicPins] = useState([]);
   const [reports, setReports] = useState([]);
-  
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Edit State
   const [editingPin, setEditingPin] = useState(null);
   const [selectedPin, setSelectedPin] = useState(null);
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
   // Building State
   const [currentBuilding, setCurrentBuilding] = useState(null); // null means 'main' map
   const [selectedFloor, setSelectedFloor] = useState('PB'); // 'PB' or 'N1'
-  
+
   // Checking Auth
   useEffect(() => {
     checkAdminAccess();
@@ -41,20 +42,20 @@ export default function AdminDashboard() {
       navigate('/login');
       return;
     }
-    
+
     // Check if user is in admin_users table
     const { data, error } = await supabase
       .from('admin_users')
       .select('*')
       .eq('user_id', session.user.id)
       .maybeSingle();
-      
+
     if (error || !data) {
       alert('Acceso Denegado. No tienes permisos de administrador.');
       navigate('/dashboard');
       return;
     }
-    
+
     setCurrentUser(session.user);
     loadData();
   };
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
       .select('*, pins(*)')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
-      
+
     if (!reqError && reqData) setRequests(reqData);
 
     // Load Public Pins
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
       .select('*')
       .eq('is_public', true)
       .order('created_at', { ascending: false });
-      
+
     if (!pinsError && pinsData) setPublicPins(pinsData);
 
     // Load Pin Reports
@@ -84,14 +85,14 @@ export default function AdminDashboard() {
       .select('*, pins(name, category)')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
-      
+
     if (!reportsError && reportsData) setReports(reportsData);
   };
 
   const handleApprove = async (request) => {
     try {
       // 1. Make the pin public
-      const { error: pinError } = await supabase.from('pins').update({ 
+      const { error: pinError } = await supabase.from('pins').update({
         is_public: true,
         owner: request.requester_name || null,
         description: request.description || null,
@@ -101,7 +102,7 @@ export default function AdminDashboard() {
         available_days: request.available_days || null
       }).eq('id', request.pin_id);
       if (pinError) throw pinError;
-      
+
       // 2. Mark request as approved
       const { error: reqError } = await supabase.from('pin_requests').update({ status: 'approved' }).eq('id', request.id);
       if (reqError) throw reqError;
@@ -119,7 +120,7 @@ export default function AdminDashboard() {
     try {
       const { error } = await supabase.from('pin_requests').update({ status: 'rejected' }).eq('id', request.id);
       if (error) throw error;
-      
+
       alert('Solicitud rechazada. El pin se mantendrá privado.');
       loadData();
     } catch (e) {
@@ -129,17 +130,44 @@ export default function AdminDashboard() {
   };
 
   const displayedPins = publicPins.filter(pin => {
-      const pinMap = pin.map_id || 'main';
-      if (currentBuilding) {
-          return pinMap === currentBuilding && pin.floor === selectedFloor;
-      }
-      return pinMap === 'main';
+    let pinMap = pin.map_id || 'main';
+    let isCorrectMap = false;
+    if (currentBuilding) {
+      isCorrectMap = (pinMap === currentBuilding && pin.floor === selectedFloor);
+    } else {
+      isCorrectMap = (pinMap === 'main');
+    }
+    if (!isCorrectMap) return false;
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const filteredRequests = requests.filter(req => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return req.pins?.name?.toLowerCase().includes(q) || req.pins?.category?.toLowerCase().includes(q) || req.requester_name?.toLowerCase().includes(q);
+  });
+
+  const filteredReports = reports.filter(rep => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return rep.pins?.name?.toLowerCase().includes(q) || rep.reason?.toLowerCase().includes(q);
+  });
+
+  const filteredPublicPins = publicPins.filter(pin => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
   });
 
   const handleDeletePin = async (pinId) => {
     try {
       if (!window.confirm("¿Seguro que quieres eliminar este pin público?")) return;
-      
+
       const { error } = await supabase.from('pins').delete().eq('id', pinId);
       if (error) throw error;
       loadData();
@@ -155,17 +183,17 @@ export default function AdminDashboard() {
         alert("El pin debe tener al menos un nombre.");
         return;
       }
-      
+
       const { error } = await supabase
         .from('pins')
-        .update({ 
+        .update({
           name: editingPin.name,
           category: editingPin.category
         })
         .eq('id', editingPin.id);
-        
+
       if (error) throw error;
-      
+
       alert('Pin actualizado correctamente.');
       setEditingPin(null);
       loadData();
@@ -245,26 +273,26 @@ export default function AdminDashboard() {
           </div>
         </div>
         <button className="admin-back-btn" onClick={() => navigate('/dashboard')}>
-           <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-             <ArrowLeft size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-           </span> 
-           Volver
+          <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+            <ArrowLeft size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+          </span>
+          Volver
         </button>
       </div>
 
       <div className="admin-content-wrapper">
         {/* Left Sidebar */}
-        <div 
-          className="admin-sidebar" 
-          style={{ 
-            transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)', 
+        <div
+          className="admin-sidebar"
+          style={{
+            transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 50
           }}
         >
-          
+
           <div className="admin-sidebar-menu">
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'requests' ? 'active' : ''}`}
               onClick={() => setActiveTab('requests')}
             >
@@ -272,14 +300,14 @@ export default function AdminDashboard() {
               <span>Solicitudes</span>
               {requests.length > 0 && <span className="admin-badge">{requests.length}</span>}
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'public_pins' ? 'active' : ''}`}
               onClick={() => setActiveTab('public_pins')}
             >
               <MapPin size={18} />
               <span>Pines Públicos</span>
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
               onClick={() => setActiveTab('reports')}
             >
@@ -294,18 +322,23 @@ export default function AdminDashboard() {
             <h4 className="section-title">
               {activeTab === 'requests' ? 'SOLICITUDES Y REPORTES' : activeTab === 'public_pins' ? 'GESTIÓN DE PINES' : 'REPORTES DE USUARIOS'}
             </h4>
-            
+
             <div className="admin-search">
               <Search size={16} color="#9ca3af" />
-              <input type="text" placeholder="Buscar..." />
+              <input 
+                type="text" 
+                placeholder="Buscar..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
 
             <div className="admin-list-container">
               {activeTab === 'requests' && (
-                requests.length === 0 ? (
+                filteredRequests.length === 0 ? (
                   <p className="admin-empty">No hay solicitudes pendientes</p>
                 ) : (
-                  requests.map(req => (
+                  filteredRequests.map(req => (
                     <div key={req.id} className="admin-card">
                       <div className="admin-card-header" style={{ alignItems: 'flex-start' }}>
                         <div className="admin-card-icon req-icon" style={{ marginTop: '4px' }}>
@@ -325,26 +358,26 @@ export default function AdminDashboard() {
                         <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', fontStyle: req.description ? 'normal' : 'italic' }}>
                           {req.description || 'Sin descripción provista.'}
                         </p>
-                        
+
                         <div style={{ marginTop: '12px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                           <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
-                             <Users size={14} color="#6b7280" style={{ display: 'block', width: '14px', height: '14px' }} />
-                           </span>
-                           <span style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold' }}>{req.requester_name || 'Desconocido'}</span>
+                            <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
+                              <Users size={14} color="#6b7280" style={{ display: 'block', width: '14px', height: '14px' }} />
+                            </span>
+                            <span style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold' }}>{req.requester_name || 'Desconocido'}</span>
                           </div>
-                          
+
                           {req.has_schedule ? (
                             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                               <div>
                                 <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold', display: 'block' }}>HORARIO</span>
-                                <span style={{ fontSize: '12px', color: '#334155' }}>{req.open_time?.slice(0,5)} - {req.close_time?.slice(0,5)}</span>
+                                <span style={{ fontSize: '12px', color: '#334155' }}>{req.open_time?.slice(0, 5)} - {req.close_time?.slice(0, 5)}</span>
                               </div>
                               <div>
                                 <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold', display: 'block' }}>DÍAS</span>
                                 <span style={{ fontSize: '12px', color: '#334155' }}>
-                                  {Array.isArray(req.available_days) 
-                                    ? req.available_days.join(', ') 
+                                  {Array.isArray(req.available_days)
+                                    ? req.available_days.join(', ')
                                     : (typeof req.available_days === 'string' ? JSON.parse(req.available_days).join(', ') : 'No espec.')}
                                 </span>
                               </div>
@@ -364,10 +397,10 @@ export default function AdminDashboard() {
               )}
 
               {activeTab === 'reports' && (
-                reports.length === 0 ? (
+                filteredReports.length === 0 ? (
                   <p className="admin-empty">No hay reportes pendientes.</p>
                 ) : (
-                  reports.map(report => (
+                  filteredReports.map(report => (
                     <div key={report.id} className="admin-card">
                       <div className="admin-card-header">
                         <div className="admin-card-icon req-icon">
@@ -379,7 +412,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <p className="admin-card-desc">
-                        <strong>Categoría:</strong> {report.pins?.category || '—'}<br/>
+                        <strong>Categoría:</strong> {report.pins?.category || '—'}<br />
                         <strong>Razón:</strong> {report.reason}
                       </p>
                       <div className="admin-card-actions">
@@ -392,10 +425,10 @@ export default function AdminDashboard() {
               )}
 
               {activeTab === 'public_pins' && (
-                publicPins.length === 0 ? (
+                filteredPublicPins.length === 0 ? (
                   <p className="admin-empty">No hay pines públicos creados aún.</p>
                 ) : (
-                  publicPins.map(pin => (
+                  filteredPublicPins.map(pin => (
                     <div key={pin.id} className="admin-item-row">
                       <div className="admin-item-info">
                         <h5>{pin.name}</h5>
@@ -433,15 +466,15 @@ export default function AdminDashboard() {
           >
             <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img 
-                  src={mapImage} 
-                  alt="Mapa Universitario" 
+                <img
+                  src={mapImage}
+                  alt="Mapa Universitario"
                   className="map-image"
                 />
-                
+
                 {/* Botón estático para Rectoría */}
                 {!currentBuilding && (
-                  <button 
+                  <button
                     style={{
                       position: 'absolute',
                       left: '52.5%',
@@ -472,8 +505,8 @@ export default function AdminDashboard() {
                 )}
 
                 {displayedPins.map(pin => (
-                  <div 
-                    key={pin.id} 
+                  <div
+                    key={pin.id}
                     className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
                     style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color || '#333', boxShadow: `0 4px 12px ${pin.color || '#333'}40` }}
                     title={pin.name || 'Pin'}
@@ -489,7 +522,7 @@ export default function AdminDashboard() {
               </div>
             </TransformComponent>
           </TransformWrapper>
-          
+
           {/* RECTORIA MODAL / OVERLAY FOR ADMINS */}
           {currentBuilding === 'rectoria' && (
             <div style={{
@@ -506,29 +539,29 @@ export default function AdminDashboard() {
                     Gestión de Pines - {selectedFloor === 'PB' ? 'P. Baja' : '1er Nivel'}
                   </span>
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                   {/* Floor Toggle */}
-                   <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
-                     <button 
+                  {/* Floor Toggle */}
+                  <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                    <button
                       style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: selectedFloor === 'PB' ? '#E25E24' : 'transparent', color: selectedFloor === 'PB' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' }}
                       onClick={() => setSelectedFloor('PB')}
-                     >PB</button>
-                     <button 
+                    >PB</button>
+                    <button
                       style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: selectedFloor === 'N1' ? '#E25E24' : 'transparent', color: selectedFloor === 'N1' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' }}
                       onClick={() => setSelectedFloor('N1')}
-                     >N1</button>
-                   </div>
-                   
-                   <button 
-                     style={{ background: '#f3f4f6', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                     onClick={() => { setCurrentBuilding(null); }}
-                   >
-                     <X size={18} color="#6b7280" />
-                   </button>
+                    >N1</button>
+                  </div>
+
+                  <button
+                    style={{ background: '#f3f4f6', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    onClick={() => { setCurrentBuilding(null); }}
+                  >
+                    <X size={18} color="#6b7280" />
+                  </button>
                 </div>
               </div>
-              
+
               {/* Internal Map Area */}
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <TransformWrapper
@@ -542,21 +575,21 @@ export default function AdminDashboard() {
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                     <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <img 
+                        <img
                           src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
-                          alt="Rectoria" 
+                          alt="Rectoria"
                           className="rectoria-map-image"
                           style={{ maxWidth: '700px', maxHeight: '60vh', objectFit: 'contain', display: 'block' }}
                         />
                         {displayedPins.map(pin => (
-                          <div 
-                            key={pin.id} 
+                          <div
+                            key={pin.id}
                             className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
-                            style={{ 
-                              left: `${pin.x || pin.x_coordinate}%`, 
-                              top: `${pin.y || pin.y_coordinate}%`, 
-                              borderColor: pin.color || '#333', 
-                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40` 
+                            style={{
+                              left: `${pin.x || pin.x_coordinate}%`,
+                              top: `${pin.y || pin.y_coordinate}%`,
+                              borderColor: pin.color || '#333',
+                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40`
                             }}
                             title={pin.name || 'Pin'}
                             onClick={(e) => {
@@ -585,7 +618,7 @@ export default function AdminDashboard() {
           width: '360px', background: 'white', borderRadius: '20px', padding: '24px',
           boxShadow: '0 10px 40px rgba(0,0,0,0.15)', zIndex: 1000
         }}>
-          <button 
+          <button
             style={{ position: 'absolute', top: '16px', right: '16px', background: '#f3f4f6', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             onClick={() => setSelectedPin(null)}
           >
@@ -593,7 +626,7 @@ export default function AdminDashboard() {
               <X size={16} color="#6b7280" style={{ display: 'block', width: '16px', height: '16px' }} />
             </span>
           </button>
-          
+
           <div style={{ marginBottom: '24px' }}>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#003056' }}>{selectedPin.name}</h3>
             <span style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', display: 'block' }}>
@@ -602,13 +635,13 @@ export default function AdminDashboard() {
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
+            <button
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', fontWeight: '700', cursor: 'pointer' }}
               onClick={() => { setEditingPin(selectedPin); setSelectedPin(null); }}
             >
               <Edit2 size={16} /> Editar
             </button>
-            <button 
+            <button
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: '#fef2f2', color: '#cf1010', border: 'none', fontWeight: '700', cursor: 'pointer' }}
               onClick={() => { handleDeletePin(selectedPin.id); setSelectedPin(null); }}
             >
@@ -627,27 +660,27 @@ export default function AdminDashboard() {
                 <X size={20} color="#6b7280" style={{ display: 'block', width: '20px', height: '20px' }} />
               </span>
             </button>
-            
+
             <div className="action-modal-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Edit2 size={24} color="#003056" />
               <h3 style={{ margin: 0, color: '#003056', fontSize: '18px' }}>Editar Pin</h3>
             </div>
-            
+
             <div className="action-form-group" style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>NOMBRE</label>
-              <input 
-                type="text" 
-                value={editingPin.name || ''} 
-                onChange={(e) => setEditingPin({...editingPin, name: e.target.value})}
+              <input
+                type="text"
+                value={editingPin.name || ''}
+                onChange={(e) => setEditingPin({ ...editingPin, name: e.target.value })}
                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               />
             </div>
 
             <div className="action-form-group" style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>CATEGORÍA</label>
-              <select 
-                value={editingPin.category || ''} 
-                onChange={(e) => setEditingPin({...editingPin, category: e.target.value})}
+              <select
+                value={editingPin.category || ''}
+                onChange={(e) => setEditingPin({ ...editingPin, category: e.target.value })}
                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               >
                 <option value="aulas">Aulas</option>
@@ -658,7 +691,7 @@ export default function AdminDashboard() {
               </select>
             </div>
 
-            <button 
+            <button
               onClick={handleUpdatePin}
               style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#003056', color: 'white', fontWeight: '700', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
             >
