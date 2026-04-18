@@ -6,7 +6,7 @@ import {
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
   AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus
 } from 'lucide-react';
-import mapImage from '../assets/mapaUniversidadVectorEdificios.svg';
+import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
 import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
 import mapImageC from '../assets/mapaUniversidadVectorEdificioC.svg';
@@ -78,10 +78,35 @@ export default function Dashboard() {
   // Admin logic
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Buildings dropdown state
-  const [activeHighlight, setActiveHighlight] = useState('main');
-  const [showBuildings, setShowBuildings] = useState(false);
+  // Buildings checklist state
+  const [activeHighlights, setActiveHighlights] = useState([]);
+  const [showMapMenu, setShowMapMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const buildingFilters = {
+    A: 'invert(40%) sepia(100%) saturate(10000%) hue-rotate(345deg) brightness(100%) contrast(100%)',
+    B: 'invert(50%) sepia(100%) saturate(10000%) hue-rotate(5deg) brightness(100%) contrast(100%)',
+    C: 'invert(60%) sepia(100%) saturate(10000%) hue-rotate(35deg) brightness(120%) contrast(100%)',
+    D: 'invert(45%) sepia(100%) saturate(10000%) hue-rotate(90deg) brightness(100%) contrast(100%)',
+    E: 'invert(55%) sepia(100%) saturate(10000%) hue-rotate(120deg) brightness(110%) contrast(100%)',
+    F: 'invert(60%) sepia(100%) saturate(10000%) hue-rotate(150deg) brightness(120%) contrast(100%)',
+    G: 'invert(45%) sepia(100%) saturate(10000%) hue-rotate(200deg) brightness(100%) contrast(100%)',
+    H: 'invert(40%) sepia(100%) saturate(10000%) hue-rotate(240deg) brightness(100%) contrast(100%)',
+    I: 'invert(50%) sepia(100%) saturate(10000%) hue-rotate(270deg) brightness(110%) contrast(100%)',
+    J: 'invert(60%) sepia(100%) saturate(10000%) hue-rotate(300deg) brightness(110%) contrast(100%)',
+    K: 'invert(50%) sepia(100%) saturate(10000%) hue-rotate(180deg) brightness(100%) contrast(100%)'
+  };
+  
+  const buildingColorsHex = {
+    A: '#ef4444', B: '#f97316', C: '#eab308', D: '#22c55e', E: '#10b981',
+    F: '#06b6d4', G: '#3b82f6', H: '#8b5cf6', I: '#d946ef', J: '#ec4899', K: '#0ea5e9'
+  };
+
+  const toggleHighlight = (letter) => {
+    setActiveHighlights(prev => 
+      prev.includes(letter) ? prev.filter(l => l !== letter) : [...prev, letter]
+    );
+  };
 
   useEffect(() => {
     fetchPins();
@@ -280,36 +305,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Edificios Left Sidebar */}
-      {!currentBuilding && (
-        <div className="floating-ui" style={{ top: '140px', left: '24px', zIndex: 40, width: '180px' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <button
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', background: showBuildings ? '#e5e7eb' : '#f3f4f6', borderRadius: '8px', fontWeight: 'bold', color: '#003056', cursor: 'pointer', border: 'none' }}
-              onClick={() => setShowBuildings(!showBuildings)}
-            >
-              Edificios <Minus size={16} style={{ transform: showBuildings ? 'rotate(180deg)' : 'rotate(0)' }} />
-            </button>
-            {showBuildings && (
-              <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px', maxHeight: '350px', overflowY: 'auto', gap: '4px' }}>
-                <button
-                  onClick={() => { setActiveHighlight('main'); setShowBuildings(false); }}
-                  style={{ padding: '8px 12px', textAlign: 'left', borderRadius: '6px', background: activeHighlight === 'main' ? '#003056' : 'transparent', color: activeHighlight === 'main' ? 'white' : '#4b5563', fontWeight: '600', cursor: 'pointer', border: 'none' }}
-                >Vista General</button>
-                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
-                  <button
-                    key={letter}
-                    onClick={() => { setActiveHighlight(letter); setShowBuildings(false); }}
-                    style={{ padding: '8px 12px', textAlign: 'left', borderRadius: '6px', background: activeHighlight === letter ? '#003056' : 'transparent', color: activeHighlight === letter ? 'white' : '#4b5563', fontWeight: '600', cursor: 'pointer', border: 'none' }}
-                  >
-                    Edificio {letter}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Edificios Left Sidebar - Replaced by right floating map menu */}
       {/* Pin Creator Modal */}
       {showPinModal && (
         <div className="pin-creator-modal floating-ui" style={{ zIndex: 1000 }}>
@@ -411,10 +407,63 @@ export default function Dashboard() {
 
       {/* Right Sidebar */}
       <div className="floating-ui right-sidebar">
-        <button className="icon-btn sidebar-btn" title="Mapa">
-          <MapIcon size={24} />
-          <span className="sidebar-tooltip">Mapa</span>
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button 
+            className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`} 
+            onClick={() => setShowMapMenu(!showMapMenu)}
+            style={{ background: showMapMenu ? '#E25E24' : 'white', color: showMapMenu ? 'white' : '#333' }}
+            title="Mapa"
+          >
+            <MapIcon size={24} />
+            <span className="sidebar-tooltip">Mapa</span>
+          </button>
+          
+          {showMapMenu && (
+            <div style={{
+              position: 'absolute',
+              right: '60px',
+              top: '0',
+              background: 'white',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              width: '320px',
+              zIndex: 100
+            }}>
+              <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
+                Colores de Edificios
+              </div>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '8px 16px', 
+                maxHeight: '350px', 
+                overflowY: 'auto' 
+              }}>
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
+                  <label key={letter} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '10px', fontSize: '14px', color: '#4b5563', padding: '4px 0' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={activeHighlights.includes(letter)}
+                      onChange={() => toggleHighlight(letter)}
+                      style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: buildingColorsHex[letter] }}
+                    />
+                    <div style={{ 
+                      width: '14px', 
+                      height: '14px', 
+                      borderRadius: '3px', 
+                      backgroundColor: buildingColorsHex[letter],
+                      border: '1px solid rgba(0,0,0,0.1)'
+                    }} />
+                    <span style={{ fontWeight: activeHighlights.includes(letter) ? 'bold' : 'normal', color: activeHighlights.includes(letter) ? '#003056' : '#4b5563' }}>
+                      Edificio {letter}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <button
           className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`}
           onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
@@ -539,10 +588,35 @@ export default function Dashboard() {
               <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <img
-                    src={buildingMaps[activeHighlight] || mapImage}
+                    src={mapImage}
                     alt="Mapa Universitario"
                     className="map-image"
+                    style={{ display: 'block' }}
                   />
+                  {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
+                    <div
+                      key={letter}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: buildingColorsHex[letter],
+                        WebkitMaskImage: `url("${buildingMaps[letter]}")`,
+                        maskImage: `url("${buildingMaps[letter]}")`,
+                        WebkitMaskSize: '100% 100%',
+                        maskSize: '100% 100%',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskRepeat: 'no-repeat',
+                        mixBlendMode: 'multiply',
+                        pointerEvents: 'none',
+                        opacity: activeHighlights.includes(letter) ? 1 : 0,
+                        transition: 'opacity 0.2s ease',
+                        willChange: 'opacity'
+                      }}
+                    />
+                  ))}
 
                   {/* Botón estático para Rectoría */}
                   {!currentBuilding && (
