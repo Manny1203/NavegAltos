@@ -501,27 +501,31 @@
   margin-top: 32px;
 }
 
-.pin-action-btn {
+.pin-creator-modal .pin-action-btn {
   flex: 1;
   padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
   border: none;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
-.btn-cancel {
-  background: #f3f4f6;
-  color: #4b5563;
+.pin-creator-modal .btn-cancel {
+  background: rgba(207, 16, 16, 0.08);
+  color: #cf1010;
 }
-.btn-cancel:hover { opacity: 0.8; }
+.pin-creator-modal .btn-cancel:hover { background: rgba(207, 16, 16, 0.15); }
 
-.btn-save {
-  background: #E25E24;
-  color: white;
+.pin-creator-modal .btn-save {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
 }
-.btn-save:hover { opacity: 0.9; }
+.pin-creator-modal .btn-save:hover { background: rgba(16, 185, 129, 0.15); }
 
 @keyframes slideDown {
   from { opacity: 0; transform: translate(-50%, -10px); }
@@ -755,7 +759,7 @@
   margin-top: 16px;
 }
 
-.btn-secondary {
+.pin-details-sheet .btn-secondary {
   flex: 1;
   display: flex;
   align-items: center;
@@ -770,49 +774,49 @@
   transition: all 0.2s;
 }
 
-.btn-public {
-  background: #003056;
-  color: white;
+.pin-details-sheet .btn-public {
+  background: rgba(234, 179, 8, 0.08);
+  color: #eab308;
 }
-.btn-public:hover { background: #002340; }
+.pin-details-sheet .btn-public:hover { background: rgba(234, 179, 8, 0.15); }
 
-.btn-danger {
-  background: #fef2f2;
+.pin-details-sheet .btn-danger {
+  background: rgba(207, 16, 16, 0.08);
   color: #cf1010;
 }
-.btn-danger:hover { background: #fee2e2; }
+.pin-details-sheet .btn-danger:hover { background: rgba(207, 16, 16, 0.15); }
 
-.btn-report {
-  width: 100%;
+.pin-details-sheet .btn-report {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 13px;
-  border-radius: 12px;
-  border: 1.5px solid #e5e7eb;
-  background: transparent;
+  border-radius: 10px;
+  border: none;
+  background: rgba(226, 94, 36, 0.08);
   color: #E25E24;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  margin-top: 4px;
+  margin-top: 0;
 }
-.btn-report:hover {
-  background: #fff5f0;
-  border-color: #E25E24;
+.pin-details-sheet .btn-report:hover {
+  background: rgba(226, 94, 36, 0.15);
 }
 
-.btn-primary-large {
-  width: 100%;
-  margin-top: 10px;
-  background: #E25E24;
-  color: white;
+.pin-details-sheet .btn-primary-large {
+  flex: 1;
+  min-width: 120px;
+  margin-top: 0;
+  background: rgba(14, 165, 233, 0.08);
+  color: #0ea5e9;
   border: none;
-  padding: 15px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -823,8 +827,8 @@
   letter-spacing: 0.2px;
 }
 
-.btn-primary-large:hover {
-  background: #c54c18;
+.pin-details-sheet .btn-primary-large:hover {
+  background: rgba(14, 165, 233, 0.15);
 }
 
 /* --- ACTION SUB-MODALS (Make Public / Report) --- */
@@ -964,3 +968,32 @@ textarea.auth-input {
   min-height: 100px;
   resize: vertical;
 }
+
+/* Modals Submit Buttons */
+.action-modal .btn-modal-submit {
+  width: 100%;
+  margin-top: 10px;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-modal .btn-report-submit {
+  background: rgba(207, 16, 16, 0.08);
+  color: #cf1010;
+}
+.action-modal .btn-report-submit:hover { background: rgba(207, 16, 16, 0.15); }
+
+.action-modal .btn-public-submit {
+  background: rgba(234, 179, 8, 0.08);
+  color: #eab308;
+}
+.action-modal .btn-public-submit:hover { background: rgba(234, 179, 8, 0.15); }

@@ -858,7 +858,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="sheet-actions-secondary">
+          <div className="sheet-actions-secondary" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
             {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
@@ -884,14 +884,14 @@ export default function Dashboard() {
                 Reportar Pin
               </button>
             )}
-          </div>
 
-          <button className="btn-primary-large">
-            <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-              <Route size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-            </span>
-            Iniciar Recorrido
-          </button>
+            <button className="btn-primary-large">
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <Route size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+              Iniciar Recorrido
+            </button>
+          </div>
         </div>
       )}
       {/* MAKE PUBLIC MODAL */}
@@ -974,7 +974,7 @@ export default function Dashboard() {
               </select>
             </div>
 
-            <button className="btn-primary-large" onClick={async () => {
+            <button className="btn-modal-submit btn-public-submit" onClick={async () => {
               if (!ownerName) {
                 alert('Por favor, indica a quién le pertenece este pin.');
                 return;
@@ -1044,7 +1044,7 @@ export default function Dashboard() {
                 onChange={(e) => setReportReason(e.target.value)}
               />
             </div>
-            <button className="btn-primary-large" style={{ background: '#cf1010' }} onClick={async () => {
+            <button className="btn-modal-submit btn-report-submit" onClick={async () => {
               if (!reportReason.trim()) {
                 alert('Por favor, escribe una razón para el reporte.');
                 return;
