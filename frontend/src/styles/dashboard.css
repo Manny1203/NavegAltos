@@ -254,6 +254,18 @@
   background-color: #c54c18;
 }
 
+.map-menu-dropdown {
+  position: absolute;
+  right: 60px;
+  top: 0;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 320px;
+  z-index: 100;
+}
+
 /* ===== MENU DROPDOWN (from hamburger) ===== */
 .menu-sidebar-overlay {
   position: fixed;
@@ -1053,5 +1065,25 @@ textarea.auth-input {
   .zoom-controls .icon-btn {
     width: 44px;
     height: 44px;
+  }
+
+  /* Modals and Menus width adjustments */
+  .map-menu-dropdown {
+    width: 250px;
+    right: 55px;
+    padding: 12px;
+  }
+
+  .modal-overlay, 
+  .pin-creator-modal, 
+  .pin-details-sheet {
+    width: 90% !important;
+    max-width: 340px;
+    padding: 16px !important;
+  }
+
+  .menu-sidebar {
+    width: 85%;
+    max-width: 300px;
   }
 }

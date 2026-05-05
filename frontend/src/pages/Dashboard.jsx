@@ -419,17 +419,7 @@ export default function Dashboard() {
           </button>
           
           {showMapMenu && (
-            <div style={{
-              position: 'absolute',
-              right: '60px',
-              top: '0',
-              background: 'white',
-              borderRadius: '12px',
-              padding: '16px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              width: '320px',
-              zIndex: 100
-            }}>
+            <div className="map-menu-dropdown">
               <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
                 Colores de Edificios
               </div>
