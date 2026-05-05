@@ -360,30 +360,32 @@ export default function Dashboard() {
       )}
 
       {/* Search Bar (formerly below navbar) */}
-      <div className="floating-ui top-bar">
-        <button className="icon-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
-          <Menu size={24} />
-        </button>
+      {!routeEditMode && (
+        <div className="floating-ui top-bar">
+          <button className="icon-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
+            <Menu size={24} />
+          </button>
 
-        <div className="search-bar-container" style={{ cursor: 'text' }}>
-          <Search size={20} color="#9ca3af" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar ubicación..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="search-bar-container" style={{ cursor: 'text' }}>
+            <Search size={20} color="#9ca3af" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Buscar ubicación..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <button
+            className="icon-btn"
+            onClick={toggleMarkerMode}
+            style={{ background: markerMode ? '#E25E24' : 'white', color: markerMode ? 'white' : '#333' }}
+          >
+            {markerMode ? <X size={24} /> : <Plus size={24} />}
+          </button>
         </div>
-
-        <button
-          className="icon-btn"
-          onClick={toggleMarkerMode}
-          style={{ background: markerMode ? '#E25E24' : 'white', color: markerMode ? 'white' : '#333' }}
-        >
-          {markerMode ? <X size={24} /> : <Plus size={24} />}
-        </button>
-      </div>
+      )}
 
       {/* Menu Sidebar */}
       {showMenuSidebar && (
@@ -599,100 +601,104 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Right Sidebar */}
-      <div className="floating-ui right-sidebar">
-        <div style={{ position: 'relative' }}>
-          <button 
-            className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`} 
-            onClick={() => setShowMapMenu(!showMapMenu)}
-            style={{ background: showMapMenu ? '#E25E24' : 'white', color: showMapMenu ? 'white' : '#333' }}
-            title="Mapa"
-          >
-            <MapIcon size={24} />
-            <span className="sidebar-tooltip">Mapa</span>
-          </button>
-          
-          {showMapMenu && (
-            <div className="map-menu-dropdown">
-              <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
-                Colores de Edificios
-              </div>
-              <div className="building-colors-grid">
-                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
-                  <label key={letter} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '10px', fontSize: '14px', color: '#4b5563', padding: '4px 0' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={activeHighlights.includes(letter)}
-                      onChange={() => toggleHighlight(letter)}
-                      style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: buildingColorsHex[letter] }}
-                    />
-                    <div style={{ 
-                      width: '14px', 
-                      height: '14px', 
-                      borderRadius: '3px', 
-                      backgroundColor: buildingColorsHex[letter],
-                      border: '1px solid rgba(0,0,0,0.1)'
-                    }} />
-                    <span style={{ fontWeight: activeHighlights.includes(letter) ? 'bold' : 'normal', color: activeHighlights.includes(letter) ? '#003056' : '#4b5563' }}>
-                      Edificio {letter}
-                    </span>
-                  </label>
-                ))}
-              </div>
+      {/* Right Sidebar and Bottom Filters */}
+      {!routeEditMode && (
+        <>
+          <div className="floating-ui right-sidebar">
+            <div style={{ position: 'relative' }}>
+              <button 
+                className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`} 
+                onClick={() => setShowMapMenu(!showMapMenu)}
+                style={{ background: showMapMenu ? '#E25E24' : 'white', color: showMapMenu ? 'white' : '#333' }}
+                title="Mapa"
+              >
+                <MapIcon size={24} />
+                <span className="sidebar-tooltip">Mapa</span>
+              </button>
+              
+              {showMapMenu && (
+                <div className="map-menu-dropdown">
+                  <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
+                    Colores de Edificios
+                  </div>
+                  <div className="building-colors-grid">
+                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
+                      <label key={letter} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '10px', fontSize: '14px', color: '#4b5563', padding: '4px 0' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={activeHighlights.includes(letter)}
+                          onChange={() => toggleHighlight(letter)}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: buildingColorsHex[letter] }}
+                        />
+                        <div style={{ 
+                          width: '14px', 
+                          height: '14px', 
+                          borderRadius: '3px', 
+                          backgroundColor: buildingColorsHex[letter],
+                          border: '1px solid rgba(0,0,0,0.1)'
+                        }} />
+                        <span style={{ fontWeight: activeHighlights.includes(letter) ? 'bold' : 'normal', color: activeHighlights.includes(letter) ? '#003056' : '#4b5563' }}>
+                          Edificio {letter}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <button
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`}
-          onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
-          style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
-          title="Ver pines públicos"
-        >
-          <Globe size={24} />
-          <span className="sidebar-tooltip">Pines Públicos</span>
-        </button>
-        <button
-          className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
-          onClick={() => { 
-            if(gpsError && !gpsEnabled) alert(gpsError);
-            setGpsEnabled(!gpsEnabled); 
-          }}
-          style={{ background: gpsEnabled ? '#E25E24' : 'white', color: gpsEnabled ? 'white' : '#333' }}
-          title="Activar GPS"
-        >
-          <Navigation size={24} />
-          <span className="sidebar-tooltip">Mi Ubicación</span>
-        </button>
-        <button
-          className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
-          onClick={() => {
-            if (!currentUser) {
-              alert("Debes iniciar sesión para ver tus pines privados.");
-              return;
-            }
-            setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
-            setSelectedPin(null);
-          }}
-          style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
-          title="Mis pines privados"
-        >
-          <Lock size={24} />
-          <span className="sidebar-tooltip">Mis Pines</span>
-        </button>
-      </div>
+            <button
+              className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`}
+              onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
+              style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
+              title="Ver pines públicos"
+            >
+              <Globe size={24} />
+              <span className="sidebar-tooltip">Pines Públicos</span>
+            </button>
+            <button
+              className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
+              onClick={() => { 
+                if(gpsError && !gpsEnabled) alert(gpsError);
+                setGpsEnabled(!gpsEnabled); 
+              }}
+              style={{ background: gpsEnabled ? '#E25E24' : 'white', color: gpsEnabled ? 'white' : '#333' }}
+              title="Activar GPS"
+            >
+              <Navigation size={24} />
+              <span className="sidebar-tooltip">Mi Ubicación</span>
+            </button>
+            <button
+              className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
+              onClick={() => {
+                if (!currentUser) {
+                  alert("Debes iniciar sesión para ver tus pines privados.");
+                  return;
+                }
+                setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
+                setSelectedPin(null);
+              }}
+              style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
+              title="Mis pines privados"
+            >
+              <Lock size={24} />
+              <span className="sidebar-tooltip">Mis Pines</span>
+            </button>
+          </div>
 
-      {/* Bottom Filters */}
-      <div className="floating-ui bottom-filters">
-        {filters.map(filter => (
-          <button
-            key={filter.id}
-            className={`filter-chip ${activeFilter === filter.id ? 'active' : ''}`}
-            onClick={() => handleFilterClick(filter.id)}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
+          {/* Bottom Filters */}
+          <div className="floating-ui bottom-filters">
+            {filters.map(filter => (
+              <button
+                key={filter.id}
+                className={`filter-chip ${activeFilter === filter.id ? 'active' : ''}`}
+                onClick={() => handleFilterClick(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Pop-up Modals for Filters */}
       {showModal && (
