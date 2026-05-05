@@ -266,6 +266,25 @@
   z-index: 100;
 }
 
+/* --- GPS PULSE ANIMATION --- */
+.gps-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background-color: rgba(59, 130, 246, 0.4);
+  border-radius: 50%;
+  animation: pulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
 /* ===== MENU DROPDOWN (from hamburger) ===== */
 .menu-sidebar-overlay {
   position: fixed;

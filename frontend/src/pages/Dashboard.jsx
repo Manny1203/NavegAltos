@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { calculateAffineCoefficients, transformCoordinates } from '../lib/geoUtils';
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation
 } from 'lucide-react';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
@@ -82,6 +83,54 @@ export default function Dashboard() {
   const [activeHighlights, setActiveHighlights] = useState([]);
   const [showMapMenu, setShowMapMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // GPS Tracking State
+  const [userLocation, setUserLocation] = useState(null);
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [gpsError, setGpsError] = useState('');
+
+  // --- GPS CALIBRATION POINTS (Placeholders until user provides real ones) ---
+  const calibrationPoints = [
+    { lat: 20.817441, lng: -102.766788, x: 20, y: 20 },
+    { lat: 20.816400, lng: -102.765000, x: 80, y: 20 },
+    { lat: 20.815000, lng: -102.766000, x: 50, y: 80 }
+  ];
+  const affineCoeffs = calculateAffineCoefficients(calibrationPoints[0], calibrationPoints[1], calibrationPoints[2]);
+
+  useEffect(() => {
+    let watchId;
+    if (gpsEnabled) {
+      if ('geolocation' in navigator) {
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const mapPos = transformCoordinates(latitude, longitude, affineCoeffs);
+            if (mapPos) {
+              // Limitar las coordenadas para evitar que el punto salga volando si el GPS falla
+              const clampedX = Math.max(-10, Math.min(110, mapPos.x));
+              const clampedY = Math.max(-10, Math.min(110, mapPos.y));
+              setUserLocation({ x: clampedX, y: clampedY, lat: latitude, lng: longitude });
+              setGpsError('');
+            }
+          },
+          (error) => {
+            console.error('Error de GPS:', error);
+            setGpsError('Asegúrate de tener la ubicación activada y haber dado permisos.');
+            setGpsEnabled(false);
+          },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+      } else {
+        setGpsError('Tu dispositivo no soporta GPS.');
+        setGpsEnabled(false);
+      }
+    } else {
+      setUserLocation(null);
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [gpsEnabled]);
 
   const buildingFilters = {
     A: 'invert(40%) sepia(100%) saturate(10000%) hue-rotate(345deg) brightness(100%) contrast(100%)',
@@ -464,6 +513,18 @@ export default function Dashboard() {
           <span className="sidebar-tooltip">Pines Públicos</span>
         </button>
         <button
+          className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
+          onClick={() => { 
+            if(gpsError && !gpsEnabled) alert(gpsError);
+            setGpsEnabled(!gpsEnabled); 
+          }}
+          style={{ background: gpsEnabled ? '#E25E24' : 'white', color: gpsEnabled ? 'white' : '#333' }}
+          title="Activar GPS"
+        >
+          <Navigation size={24} />
+          <span className="sidebar-tooltip">Mi Ubicación</span>
+        </button>
+        <button
           className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
           onClick={() => {
             if (!currentUser) {
@@ -658,6 +719,29 @@ export default function Dashboard() {
                       {renderPinIcon(pin.icon, pin.color)}
                     </div>
                   ))}
+
+                  {/* User Location Blue Dot */}
+                  {userLocation && !currentBuilding && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: `${userLocation.x}%`,
+                        top: `${userLocation.y}%`,
+                        width: '18px',
+                        height: '18px',
+                        backgroundColor: '#3b82f6',
+                        borderRadius: '50%',
+                        border: '3px solid white',
+                        boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 20,
+                        transition: 'left 1s linear, top 1s linear'
+                      }}
+                      title="Tu Ubicación"
+                    >
+                      <div className="gps-pulse"></div>
+                    </div>
+                  )}
                 </div>
               </TransformComponent>
             </React.Fragment>
