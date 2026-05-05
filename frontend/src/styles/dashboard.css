@@ -1,11 +1,14 @@
 /* Dashboard Layout */
 .dashboard-container {
   width: 100vw;
-  height: 100vh;
-  position: relative;
+  height: 100dvh;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
   background-color: #fafafa;
   font-family: 'Inter', sans-serif;
+  touch-action: none;
 }
 
 /* Reset Vite default button styles inside dashboard */
@@ -111,7 +114,7 @@
 
 /* Top Bar (search) */
 .top-bar {
-  top: 72px;
+  top: 24px;
   left: 0;
   width: 100%;
   display: flex;
@@ -257,7 +260,7 @@
 .map-menu-dropdown {
   position: absolute;
   right: 60px;
-  top: 0;
+  bottom: 0;
   background: white;
   border-radius: 12px;
   padding: 16px;
@@ -298,21 +301,20 @@
 
 .menu-sidebar {
   position: absolute;
-  top: 130px;
-  left: 50%;
-  transform: translateX(-50%) translateX(-200px);
+  top: 85px;
+  left: 24px;
   width: 320px;
   background: white;
   z-index: 56;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
   border-radius: 16px;
   overflow: hidden;
-  animation: menuDropdown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes menuDropdown {
-  from { opacity: 0; transform: translateX(-50%) translateX(-200px) translateY(-8px); }
-  to { opacity: 1; transform: translateX(-50%) translateX(-200px) translateY(0); }
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px) translateY(-8px); }
+  to { opacity: 1; transform: translateX(0) translateY(0); }
 }
 
 .menu-sidebar-header {
@@ -1029,10 +1031,66 @@ textarea.auth-input {
 }
 .action-modal .btn-public-submit:hover { background: rgba(234, 179, 8, 0.15); }
 
+/* --- MAP MENU GRID --- */
+.building-colors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* --- RECTORIA MODAL --- */
+.rectoria-modal {
+  position: fixed;
+  top: 5%;
+  left: 5%;
+  width: 90%;
+  height: 90%;
+  background-color: #f1f5f9;
+  border-radius: 24px;
+  z-index: 90;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.rectoria-header {
+  padding: 20px 24px;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rectoria-title {
+  margin: 0;
+  color: #003056;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.rectoria-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+.rectoria-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 /* --- RESPONSIVE DESIGN (MOBILE) --- */
 @media (max-width: 768px) {
   /* Search Bar adjustments */
   .top-bar {
+    top: 16px;
     padding: 0 16px;
     box-sizing: border-box;
   }
@@ -1090,6 +1148,7 @@ textarea.auth-input {
   .map-menu-dropdown {
     width: 250px;
     right: 55px;
+    bottom: 0;
     padding: 12px;
   }
 
@@ -1102,7 +1161,38 @@ textarea.auth-input {
   }
 
   .menu-sidebar {
-    width: 85%;
+    left: 16px;
+    top: 76px;
+    width: calc(100vw - 32px);
     max-width: 300px;
+  }
+
+  /* Building Colors Menu */
+  .building-colors-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Rectoria Modal Adjustments */
+  .rectoria-modal {
+    top: 2%;
+    left: 2%;
+    width: 96%;
+    height: 96%;
+    border-radius: 16px;
+  }
+  .rectoria-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+  .rectoria-title {
+    font-size: 18px;
+  }
+  .rectoria-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
   }
 }

@@ -472,13 +472,7 @@ export default function Dashboard() {
               <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
                 Colores de Edificios
               </div>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '8px 16px', 
-                maxHeight: '350px', 
-                overflowY: 'auto' 
-              }}>
+              <div className="building-colors-grid">
                 {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
                   <label key={letter} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '10px', fontSize: '14px', color: '#4b5563', padding: '4px 0' }}>
                     <input 
@@ -615,8 +609,8 @@ export default function Dashboard() {
         }}
       >
         <TransformWrapper
-          initialScale={0.8}
-          minScale={0.8}
+          initialScale={0.5}
+          minScale={0.3}
           maxScale={3}
           centerOnInit={true}
           centerZoomedOut={true}
@@ -751,22 +745,17 @@ export default function Dashboard() {
 
       {/* RECTORIA MODAL / OVERLAY */}
       {currentBuilding === 'rectoria' && (
-        <div style={{
-          position: 'fixed', top: '5%', left: '5%', width: '90%', height: '90%',
-          backgroundColor: '#f1f5f9', borderRadius: '24px', zIndex: 90,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', border: '1px solid #e2e8f0'
-        }}>
+        <div className="rectoria-modal">
           {/* Header */}
-          <div style={{ padding: '20px 24px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="rectoria-header">
             <div>
-              <h2 style={{ margin: 0, color: '#003056', fontSize: '24px', fontWeight: 'bold' }}>Edificio de Rectoría</h2>
-              <span style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', display: 'block' }}>
+              <h2 className="rectoria-title">Edificio de Rectoría</h2>
+              <span className="rectoria-subtitle">
                 Plano de Planta - {selectedFloor === 'PB' ? 'P. Baja' : '1er Nivel'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="rectoria-controls">
               {/* Floor Toggle */}
               <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
                 <button
@@ -817,8 +806,8 @@ export default function Dashboard() {
             }}
           >
             <TransformWrapper
-              initialScale={0.8}
-              minScale={0.5}
+              initialScale={0.5}
+              minScale={0.3}
               maxScale={3}
               centerOnInit={true}
               centerZoomedOut={true}
