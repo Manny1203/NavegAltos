@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('requests'); // 'requests', 'public_pins'
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
   // Data states
   const [requests, setRequests] = useState([]);
@@ -281,6 +281,14 @@ export default function AdminDashboard() {
       </div>
 
       <div className="admin-content-wrapper">
+        {/* Mobile Overlay */}
+        {isSidebarOpen && window.innerWidth <= 768 && (
+          <div 
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.3)', zIndex: 40 }}
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
         {/* Left Sidebar */}
         <div
           className="admin-sidebar"

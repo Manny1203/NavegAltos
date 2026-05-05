@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { calculateAffineCoefficients, transformCoordinates } from '../lib/geoUtils';
+import { calculateAffineCoefficients, transformCoordinates, findShortestPath, findClosestNode, calculateDistanceMap, mapDistanceToMeters } from '../lib/geoUtils';
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
@@ -97,6 +97,12 @@ export default function Dashboard() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [deleteMode, setDeleteMode] = useState(false);
 
+  // Routing State
+  const [campusGraph, setCampusGraph] = useState({ nodes: [], edges: [] });
+  const [currentRoute, setCurrentRoute] = useState(null);
+  const [routeDistance, setRouteDistance] = useState(0);
+  const [routeTime, setRouteTime] = useState(0);
+
   // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
     { lat: 20.84506154113727, lng: -102.78311189519502, x: 21.875, y: 82.01830328970385 }, // Pin 1 (Entrada)
@@ -175,7 +181,59 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPins();
     fetchUser();
+    fetchCampusGraph();
   }, [activeFilter, visibilityFilter, currentUser?.id]);
+
+  const fetchCampusGraph = async () => {
+    try {
+      const res = await fetch('/campus_graph.json');
+      if (res.ok) {
+        const data = await res.json();
+        setCampusGraph(data);
+      }
+    } catch (err) {
+      console.log('No custom graph found', err);
+    }
+  };
+
+  // Route Calculation Effect
+  useEffect(() => {
+    if (!selectedPin || !campusGraph.nodes.length) {
+      setCurrentRoute(null);
+      return;
+    }
+
+    const startPos = userLocation ? { x: userLocation.x, y: userLocation.y } : { x: 21.875, y: 82.018 };
+    const endPos = { x: selectedPin.x_coordinate, y: selectedPin.y_coordinate };
+
+    const startNode = findClosestNode(startPos.x, startPos.y, campusGraph.nodes);
+    const endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
+
+    if (startNode && endNode) {
+      const pathIds = findShortestPath(campusGraph.nodes, campusGraph.edges, startNode.id, endNode.id);
+      if (pathIds) {
+        const pathNodes = pathIds.map(id => campusGraph.nodes.find(n => n.id === id));
+        setCurrentRoute(pathNodes);
+        
+        let totalMapDist = 0;
+        for (let i = 0; i < pathNodes.length - 1; i++) {
+          totalMapDist += calculateDistanceMap(pathNodes[i], pathNodes[i+1]);
+        }
+        totalMapDist += calculateDistanceMap(startPos, startNode);
+        totalMapDist += calculateDistanceMap(endPos, endNode);
+
+        const meters = mapDistanceToMeters(totalMapDist);
+        setRouteDistance(Math.round(meters));
+        setRouteTime(Math.ceil(meters / 84)); // Walking speed ~ 84m/min (5km/h)
+      } else {
+        setCurrentRoute(null);
+        const dist = calculateDistanceMap(startPos, endPos);
+        const meters = mapDistanceToMeters(dist);
+        setRouteDistance(Math.round(meters));
+        setRouteTime(Math.ceil(meters / 84));
+      }
+    }
+  }, [selectedPin, userLocation, campusGraph]);
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -356,7 +414,12 @@ export default function Dashboard() {
                   </button>
                   <button
                     className="menu-sidebar-item"
-                    onClick={() => { setRouteEditMode(true); setShowMenuSidebar(false); }}
+                    onClick={() => {
+                      setGraphNodes(campusGraph.nodes || []);
+                      setGraphEdges(campusGraph.edges || []);
+                      setRouteEditMode(true);
+                      setShowMenuSidebar(false);
+                    }}
                     style={{ marginBottom: '16px' }}
                   >
                     <Route size={20} color="#E25E24" />
@@ -393,6 +456,23 @@ export default function Dashboard() {
           <button style={{ background: '#f3f4f6', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setSelectedNodeId(null)}>
             Deseleccionar
           </button>
+          <label style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Cargar JSON
+            <input type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  try {
+                    const data = JSON.parse(event.target.result);
+                    setGraphNodes(data.nodes || []);
+                    setGraphEdges(data.edges || []);
+                  } catch (err) { alert('Error al cargar archivo JSON'); }
+                };
+                reader.readAsText(file);
+              }
+            }} />
+          </label>
           <button style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => {
              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ nodes: graphNodes, edges: graphEdges }));
              const downloadAnchorNode = document.createElement('a');
@@ -835,8 +915,27 @@ export default function Dashboard() {
                     />
                   ))}
 
+                  {/* Calculated Route SVG */}
+                  {currentRoute && !routeEditMode && selectedPin && (
+                    <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9 }}>
+                      {/* Polyline connecting user -> node -> node -> pin */}
+                      <polyline
+                        points={`
+                          ${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}
+                          ${currentRoute.map(n => `${n.x},${n.y}`).join(' ')}
+                          ${selectedPin.x_coordinate},${selectedPin.y_coordinate}
+                        `}
+                        fill="none"
+                        stroke="#0ea5e9"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 4"
+                        opacity="0.8"
+                      />
+                    </svg>
+                  )}
+
                   {/* Render dynamically fetched user Pins based on current building */}
-                  {displayedPins.map(pin => (
+                  {!routeEditMode && displayedPins.map(pin => (
                     <div
                       key={pin.id}
                       className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
@@ -1031,11 +1130,11 @@ export default function Dashboard() {
           <div className="sheet-stats">
             <div className="stat-box">
               <span className="stat-label">DISTANCIA</span>
-              <span className="stat-value">350 m</span>
+              <span className="stat-value">{routeDistance > 0 ? `${routeDistance} m` : '---'}</span>
             </div>
             <div className="stat-box">
               <span className="stat-label">TIEMPO</span>
-              <span className="stat-value">5 min</span>
+              <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
             </div>
           </div>
 

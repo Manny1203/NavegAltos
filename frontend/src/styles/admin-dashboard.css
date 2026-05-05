@@ -398,3 +398,25 @@
   width: 20px;
   height: 20px;
 }
+
+/* Mobile Responsiveness for Admin Panel */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 85vw;
+    max-width: 320px;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+  }
+
+  .admin-navbar {
+    padding: 0 16px;
+  }
+
+  .admin-brand .brand-title {
+    font-size: 14px;
+  }
+
+  .admin-back-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
