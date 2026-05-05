@@ -997,3 +997,61 @@ textarea.auth-input {
   color: #eab308;
 }
 .action-modal .btn-public-submit:hover { background: rgba(234, 179, 8, 0.15); }
+
+/* --- RESPONSIVE DESIGN (MOBILE) --- */
+@media (max-width: 768px) {
+  /* Search Bar adjustments */
+  .top-bar {
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+  .search-bar-container {
+    flex: 1;
+    min-width: 0; /* Prevents flex blowout */
+  }
+
+  /* Bottom Filters horizontally scrollable */
+  .bottom-filters {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 12px; 
+    bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide scrollbar for a clean look */
+  .bottom-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .bottom-filters {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .filter-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Right Sidebar repositioning */
+  .right-sidebar {
+    bottom: 90px;
+    right: 16px;
+  }
+  .right-sidebar .icon-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* Zoom controls repositioning */
+  .zoom-controls {
+    bottom: 230px;
+    right: 16px;
+  }
+  .zoom-controls .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
