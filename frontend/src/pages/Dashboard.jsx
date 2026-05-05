@@ -90,6 +90,13 @@ export default function Dashboard() {
   const [gpsError, setGpsError] = useState('');
   const [isOutOfBounds, setIsOutOfBounds] = useState(false);
 
+  // Route Editor State
+  const [routeEditMode, setRouteEditMode] = useState(false);
+  const [graphNodes, setGraphNodes] = useState([]);
+  const [graphEdges, setGraphEdges] = useState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [deleteMode, setDeleteMode] = useState(false);
+
   // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
     { lat: 20.84506154113727, lng: -102.78311189519502, x: 21.875, y: 82.01830328970385 }, // Pin 1 (Entrada)
@@ -335,17 +342,30 @@ export default function Dashboard() {
             </div>
             <div className="menu-sidebar-content">
               {isAdmin && (
-                <button
-                  className="menu-sidebar-item"
-                  onClick={() => navigate('/admin')}
-                  style={{ marginBottom: '16px' }}
-                >
-                  <Shield size={20} color="#003056" />
-                  <div className="menu-item-text">
-                    <span className="menu-item-label" style={{ color: '#003056' }}>Panel de Control</span>
-                    <span className="menu-item-desc">Gestión de pines y solicitudes</span>
-                  </div>
-                </button>
+                <>
+                  <button
+                    className="menu-sidebar-item"
+                    onClick={() => navigate('/admin')}
+                    style={{ marginBottom: '8px' }}
+                  >
+                    <Shield size={20} color="#003056" />
+                    <div className="menu-item-text">
+                      <span className="menu-item-label" style={{ color: '#003056' }}>Panel de Control</span>
+                      <span className="menu-item-desc">Gestión de pines y solicitudes</span>
+                    </div>
+                  </button>
+                  <button
+                    className="menu-sidebar-item"
+                    onClick={() => { setRouteEditMode(true); setShowMenuSidebar(false); }}
+                    style={{ marginBottom: '16px' }}
+                  >
+                    <Route size={20} color="#E25E24" />
+                    <div className="menu-item-text">
+                      <span className="menu-item-label" style={{ color: '#E25E24' }}>Editor de Rutas</span>
+                      <span className="menu-item-desc">Trazar caminos del mapa (Nodos)</span>
+                    </div>
+                  </button>
+                </>
               )}
               <button
                 className="menu-sidebar-item text-danger"
@@ -361,6 +381,33 @@ export default function Dashboard() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Route Editor Toolbar */}
+      {routeEditMode && (
+        <div className="floating-ui" style={{ bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, display: 'flex', gap: '8px', background: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button style={{ background: deleteMode ? '#cf1010' : '#f3f4f6', color: deleteMode ? 'white' : '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setDeleteMode(!deleteMode)}>
+            <Trash2 size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+            Borrar
+          </button>
+          <button style={{ background: '#f3f4f6', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setSelectedNodeId(null)}>
+            Deseleccionar
+          </button>
+          <button style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => {
+             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ nodes: graphNodes, edges: graphEdges }));
+             const downloadAnchorNode = document.createElement('a');
+             downloadAnchorNode.setAttribute("href", dataStr);
+             downloadAnchorNode.setAttribute("download", "campus_graph.json");
+             document.body.appendChild(downloadAnchorNode);
+             downloadAnchorNode.click();
+             downloadAnchorNode.remove();
+          }}>
+            Guardar
+          </button>
+          <button style={{ background: '#333', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => { setRouteEditMode(false); setDeleteMode(false); }}>
+            Cerrar
+          </button>
+        </div>
       )}
 
       {/* Marker Mode helper banner */}
@@ -606,8 +653,34 @@ export default function Dashboard() {
 
       {/* Interactive Map Area */}
       <div
-        style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 1, cursor: markerMode ? 'crosshair' : 'default' }}
+        style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 1, cursor: markerMode || routeEditMode ? 'crosshair' : 'default' }}
         onClick={(e) => {
+          if (routeEditMode) {
+            const img = document.querySelector('.map-image');
+            if (img) {
+              const rect = img.getBoundingClientRect();
+              if (
+                e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top && e.clientY <= rect.bottom
+              ) {
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                
+                if (!deleteMode) {
+                  const newNode = { id: Date.now().toString(), x, y };
+                  setGraphNodes(prev => [...prev, newNode]);
+                  
+                  if (selectedNodeId) {
+                    const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: newNode.id };
+                    setGraphEdges(prev => [...prev, newEdge]);
+                  }
+                  setSelectedNodeId(newNode.id);
+                }
+              }
+            }
+            return;
+          }
+
           if (markerMode && !showPinModal) {
             // Check if click was inside the image bounding box
             const img = document.querySelector('.map-image');
@@ -713,6 +786,54 @@ export default function Dashboard() {
                       <MapPin size={20} />
                     </button>
                   )}
+
+                  {/* Route Editor SVGs */}
+                  {routeEditMode && graphEdges.map(edge => {
+                    const n1 = graphNodes.find(n => n.id === edge.node1Id);
+                    const n2 = graphNodes.find(n => n.id === edge.node2Id);
+                    if (!n1 || !n2) return null;
+                    return (
+                      <svg key={edge.id} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 11 }}>
+                        <line x1={`${n1.x}%`} y1={`${n1.y}%`} x2={`${n2.x}%`} y2={`${n2.y}%`} stroke="#E25E24" strokeWidth="3" opacity="0.8" />
+                      </svg>
+                    );
+                  })}
+                  {routeEditMode && graphNodes.map(node => (
+                    <div
+                      key={node.id}
+                      style={{
+                        position: 'absolute',
+                        left: `${node.x}%`,
+                        top: `${node.y}%`,
+                        width: '18px',
+                        height: '18px',
+                        backgroundColor: selectedNodeId === node.id ? '#10b981' : '#3b82f6',
+                        border: '3px solid white',
+                        borderRadius: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 12,
+                        cursor: 'pointer',
+                        boxShadow: '0 0 8px rgba(0,0,0,0.4)'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (deleteMode) {
+                          setGraphNodes(prev => prev.filter(n => n.id !== node.id));
+                          setGraphEdges(prev => prev.filter(edge => edge.node1Id !== node.id && edge.node2Id !== node.id));
+                          if (selectedNodeId === node.id) setSelectedNodeId(null);
+                        } else {
+                          if (selectedNodeId && selectedNodeId !== node.id) {
+                            const exists = graphEdges.find(ed => (ed.node1Id === selectedNodeId && ed.node2Id === node.id) || (ed.node2Id === selectedNodeId && ed.node1Id === node.id));
+                            if (!exists) {
+                              const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: node.id };
+                              setGraphEdges(prev => [...prev, newEdge]);
+                            }
+                          }
+                          setSelectedNodeId(node.id);
+                        }
+                      }}
+                    />
+                  ))}
 
                   {/* Render dynamically fetched user Pins based on current building */}
                   {displayedPins.map(pin => (
