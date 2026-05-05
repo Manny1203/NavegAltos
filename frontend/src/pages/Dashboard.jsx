@@ -89,11 +89,11 @@ export default function Dashboard() {
   const [gpsEnabled, setGpsEnabled] = useState(false);
   const [gpsError, setGpsError] = useState('');
 
-  // --- GPS CALIBRATION POINTS (Placeholders until user provides real ones) ---
+  // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
-    { lat: 20.817441, lng: -102.766788, x: 20, y: 20 },
-    { lat: 20.816400, lng: -102.765000, x: 80, y: 20 },
-    { lat: 20.815000, lng: -102.766000, x: 50, y: 80 }
+    { lat: 20.84506154113727, lng: -102.78311189519502, x: 21.875, y: 82.01830328970385 }, // Pin 1 (Entrada)
+    { lat: 20.848292209707036, lng: -102.7812475654753, x: 79.46428571428571, y: 72.64325219972991 }, // Pin 2 (Derecha abajo)
+    { lat: 20.84826646582548, lng: -102.78449790698997, x: 50.89285714285714, y: 17.19652146759833 }  // Pin 3 (Izquierda arriba)
   ];
   const affineCoeffs = calculateAffineCoefficients(calibrationPoints[0], calibrationPoints[1], calibrationPoints[2]);
 
