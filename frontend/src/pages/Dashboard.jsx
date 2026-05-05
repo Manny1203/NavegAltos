@@ -186,10 +186,27 @@ export default function Dashboard() {
 
   const fetchCampusGraph = async () => {
     try {
+      // 1. Intentar cargar desde Supabase
+      const { data, error } = await supabase
+        .from('campus_graphs')
+        .select('graph_data')
+        .eq('id', 1)
+        .maybeSingle();
+        
+      if (!error && data && data.graph_data) {
+        setCampusGraph(data.graph_data);
+        return;
+      }
+    } catch (err) {
+      console.log('Error fetching from Supabase, trying local fallback...', err);
+    }
+
+    // 2. Fallback a archivo local
+    try {
       const res = await fetch('/campus_graph.json');
       if (res.ok) {
-        const data = await res.json();
-        setCampusGraph(data);
+        const localData = await res.json();
+        setCampusGraph(localData);
       }
     } catch (err) {
       console.log('No custom graph found', err);
@@ -475,14 +492,33 @@ export default function Dashboard() {
               }
             }} />
           </label>
-          <button style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => {
-             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ nodes: graphNodes, edges: graphEdges }));
-             const downloadAnchorNode = document.createElement('a');
-             downloadAnchorNode.setAttribute("href", dataStr);
-             downloadAnchorNode.setAttribute("download", "campus_graph.json");
-             document.body.appendChild(downloadAnchorNode);
-             downloadAnchorNode.click();
-             downloadAnchorNode.remove();
+          <button style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={async () => {
+             const newGraph = { nodes: graphNodes, edges: graphEdges };
+             try {
+               // 1. Guardar en Supabase
+               const { error } = await supabase
+                 .from('campus_graphs')
+                 .upsert({ id: 1, graph_data: newGraph });
+                 
+               if (error) throw error;
+               
+               // 2. Aplicar en vivo
+               setCampusGraph(newGraph);
+               
+               // 3. Respaldo local
+               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(newGraph));
+               const downloadAnchorNode = document.createElement('a');
+               downloadAnchorNode.setAttribute("href", dataStr);
+               downloadAnchorNode.setAttribute("download", "campus_graph_backup.json");
+               document.body.appendChild(downloadAnchorNode);
+               downloadAnchorNode.click();
+               downloadAnchorNode.remove();
+               
+               alert('Grafo guardado en la Nube exitosamente y aplicado en vivo.');
+             } catch (err) {
+               console.error('Error guardando en Supabase:', err);
+               alert('Error al guardar en la nube. Revisa consola.');
+             }
           }}>
             Guardar
           </button>
