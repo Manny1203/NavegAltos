@@ -302,14 +302,20 @@
 .menu-sidebar {
   position: absolute;
   top: 85px;
-  left: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateX(-200px);
   width: 320px;
   background: white;
   z-index: 56;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
   border-radius: 16px;
   overflow: hidden;
-  animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: menuDropdown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes menuDropdown {
+  from { opacity: 0; transform: translateX(-50%) translateX(-200px) translateY(-8px); }
+  to { opacity: 1; transform: translateX(-50%) translateX(-200px) translateY(0); }
 }
 
 @keyframes slideInLeft {
@@ -1163,8 +1169,10 @@ textarea.auth-input {
   .menu-sidebar {
     left: 16px;
     top: 76px;
+    transform: none;
     width: calc(100vw - 32px);
     max-width: 300px;
+    animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Building Colors Menu */
