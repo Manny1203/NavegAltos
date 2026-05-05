@@ -88,6 +88,7 @@ export default function Dashboard() {
   const [userLocation, setUserLocation] = useState(null);
   const [gpsEnabled, setGpsEnabled] = useState(false);
   const [gpsError, setGpsError] = useState('');
+  const [isOutOfBounds, setIsOutOfBounds] = useState(false);
 
   // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
@@ -106,10 +107,16 @@ export default function Dashboard() {
             const { latitude, longitude } = position.coords;
             const mapPos = transformCoordinates(latitude, longitude, affineCoeffs);
             if (mapPos) {
-              // Limitar las coordenadas para evitar que el punto salga volando si el GPS falla
-              const clampedX = Math.max(-10, Math.min(110, mapPos.x));
-              const clampedY = Math.max(-10, Math.min(110, mapPos.y));
-              setUserLocation({ x: clampedX, y: clampedY, lat: latitude, lng: longitude });
+              if (mapPos.x < -5 || mapPos.x > 105 || mapPos.y < -5 || mapPos.y > 105) {
+                setIsOutOfBounds(true);
+                setUserLocation(null);
+              } else {
+                setIsOutOfBounds(false);
+                // Limitar las coordenadas para evitar que el punto se salga del recuadro del mapa
+                const clampedX = Math.max(0, Math.min(100, mapPos.x));
+                const clampedY = Math.max(0, Math.min(100, mapPos.y));
+                setUserLocation({ x: clampedX, y: clampedY, lat: latitude, lng: longitude });
+              }
               setGpsError('');
             }
           },
@@ -126,6 +133,7 @@ export default function Dashboard() {
       }
     } else {
       setUserLocation(null);
+      setIsOutOfBounds(false);
     }
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
@@ -275,6 +283,16 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
+
+      {/* Out of bounds warning */}
+      {isOutOfBounds && (
+        <div className="floating-ui" style={{ top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 200, width: '90%', maxWidth: '400px' }}>
+          <div style={{ background: '#cf1010', color: 'white', padding: '12px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(207, 16, 16, 0.3)' }}>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+            <span>Estás fuera del Centro Universitario. Acércate para iniciar el rastreo interno.</span>
+          </div>
+        </div>
+      )}
 
       {/* Search Bar (formerly below navbar) */}
       <div className="floating-ui top-bar">
