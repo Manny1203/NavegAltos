@@ -1186,7 +1186,13 @@ export default function Dashboard() {
               </button>
             )}
 
-            <button className="btn-primary-large">
+            <button 
+              className="btn-primary-large"
+              onClick={() => {
+                setGpsEnabled(true);
+                alert("Navegación iniciada. Sigue la ruta azul punteada en el mapa.");
+              }}
+            >
               <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
                 <Route size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
               </span>
