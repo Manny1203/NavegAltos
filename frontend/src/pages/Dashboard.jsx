@@ -780,9 +780,9 @@ export default function Dashboard() {
         }}
       >
         <TransformWrapper
-          initialScale={0.5}
-          minScale={0.3}
-          maxScale={3}
+          initialScale={window.innerWidth > 768 ? 0.8 : 0.5}
+          minScale={window.innerWidth > 768 ? 0.8 : 0.3}
+          maxScale={5}
           centerOnInit={true}
           centerZoomedOut={true}
           limitToBounds={true}
@@ -885,10 +885,10 @@ export default function Dashboard() {
                         position: 'absolute',
                         left: `${node.x}%`,
                         top: `${node.y}%`,
-                        width: '18px',
-                        height: '18px',
+                        width: '10px',
+                        height: '10px',
                         backgroundColor: selectedNodeId === node.id ? '#10b981' : '#3b82f6',
-                        border: '3px solid white',
+                        border: '2px solid white',
                         borderRadius: '50%',
                         transform: 'translate(-50%, -50%)',
                         zIndex: 12,
