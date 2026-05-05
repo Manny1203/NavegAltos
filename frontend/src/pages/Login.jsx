@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, LogIn } from 'lucide-react';
+import { User, Lock, LogIn, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
@@ -10,6 +10,26 @@ export default function LoginPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -93,6 +113,34 @@ export default function LoginPage() {
         <div className="auth-footer">
           ¿No tienes cuenta? <Link to="/register" className="auth-link">Regístrate aquí</Link>
         </div>
+
+        {deferredPrompt && (
+          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+            <button 
+              type="button" 
+              onClick={handleInstallClick}
+              style={{
+                background: '#003056',
+                color: 'white',
+                border: 'none',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(0, 48, 86, 0.2)',
+                width: '100%',
+                justifyContent: 'center',
+                fontSize: '15px'
+              }}
+            >
+              <Download size={18} />
+              Instalar App NavegAltos
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="page-footer">
