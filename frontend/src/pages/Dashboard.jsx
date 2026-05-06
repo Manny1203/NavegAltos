@@ -97,6 +97,43 @@ export default function Dashboard() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [deleteMode, setDeleteMode] = useState(false);
 
+  // History for Undo/Redo
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const saveToHistory = (nodes, edges) => {
+    const newState = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!routeEditMode) return;
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+          const newIndex = historyIndex - 1;
+          setHistoryIndex(newIndex);
+          setGraphNodes(history[newIndex].nodes);
+          setGraphEdges(history[newIndex].edges);
+        }
+      } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+        e.preventDefault();
+        if (historyIndex < history.length - 1) {
+          const newIndex = historyIndex + 1;
+          setHistoryIndex(newIndex);
+          setGraphNodes(history[newIndex].nodes);
+          setGraphEdges(history[newIndex].edges);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [routeEditMode, history, historyIndex]);
+
   // Routing State
   const [campusGraph, setCampusGraph] = useState({ nodes: [], edges: [] });
   const [currentRoute, setCurrentRoute] = useState(null);
@@ -434,8 +471,12 @@ export default function Dashboard() {
                   <button
                     className="menu-sidebar-item"
                     onClick={() => {
-                      setGraphNodes(campusGraph.nodes || []);
-                      setGraphEdges(campusGraph.edges || []);
+                      const nodes = campusGraph.nodes || [];
+                      const edges = campusGraph.edges || [];
+                      setGraphNodes(nodes);
+                      setGraphEdges(edges);
+                      setHistory([{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) }]);
+                      setHistoryIndex(0);
                       setRouteEditMode(true);
                       setShowMenuSidebar(false);
                     }}
@@ -789,14 +830,45 @@ export default function Dashboard() {
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
                 
                 if (!deleteMode) {
-                  const newNode = { id: Date.now().toString(), x, y };
-                  setGraphNodes(prev => [...prev, newNode]);
+                  // Auto-snap logic: check if there's a node within 1.5% distance
+                  const SNAP_RADIUS = 1.5;
+                  let closestNode = null;
+                  let minDistance = SNAP_RADIUS;
                   
-                  if (selectedNodeId) {
-                    const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: newNode.id };
-                    setGraphEdges(prev => [...prev, newEdge]);
+                  graphNodes.forEach(node => {
+                    const dist = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
+                    if (dist < minDistance) {
+                      minDistance = dist;
+                      closestNode = node;
+                    }
+                  });
+
+                  if (closestNode) {
+                    if (selectedNodeId && selectedNodeId !== closestNode.id) {
+                      const exists = graphEdges.find(ed => (ed.node1Id === selectedNodeId && ed.node2Id === closestNode.id) || (ed.node2Id === selectedNodeId && ed.node1Id === closestNode.id));
+                      if (!exists) {
+                        const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: closestNode.id };
+                        const newEdges = [...graphEdges, newEdge];
+                        setGraphEdges(newEdges);
+                        saveToHistory(graphNodes, newEdges);
+                      }
+                    }
+                    setSelectedNodeId(closestNode.id);
+                  } else {
+                    const newNode = { id: Date.now().toString(), x, y };
+                    const newNodes = [...graphNodes, newNode];
+                    let newEdges = [...graphEdges];
+                    
+                    if (selectedNodeId) {
+                      const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: newNode.id };
+                      newEdges.push(newEdge);
+                    }
+                    
+                    setGraphNodes(newNodes);
+                    setGraphEdges(newEdges);
+                    saveToHistory(newNodes, newEdges);
+                    setSelectedNodeId(newNode.id);
                   }
-                  setSelectedNodeId(newNode.id);
                 }
               }
             }
@@ -940,15 +1012,20 @@ export default function Dashboard() {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (deleteMode) {
-                          setGraphNodes(prev => prev.filter(n => n.id !== node.id));
-                          setGraphEdges(prev => prev.filter(edge => edge.node1Id !== node.id && edge.node2Id !== node.id));
+                          const newNodes = graphNodes.filter(n => n.id !== node.id);
+                          const newEdges = graphEdges.filter(edge => edge.node1Id !== node.id && edge.node2Id !== node.id);
+                          setGraphNodes(newNodes);
+                          setGraphEdges(newEdges);
+                          saveToHistory(newNodes, newEdges);
                           if (selectedNodeId === node.id) setSelectedNodeId(null);
                         } else {
                           if (selectedNodeId && selectedNodeId !== node.id) {
                             const exists = graphEdges.find(ed => (ed.node1Id === selectedNodeId && ed.node2Id === node.id) || (ed.node2Id === selectedNodeId && ed.node1Id === node.id));
                             if (!exists) {
                               const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: node.id };
-                              setGraphEdges(prev => [...prev, newEdge]);
+                              const newEdges = [...graphEdges, newEdge];
+                              setGraphEdges(newEdges);
+                              saveToHistory(graphNodes, newEdges);
                             }
                           }
                           setSelectedNodeId(node.id);
