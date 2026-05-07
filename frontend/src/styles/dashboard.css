@@ -1274,7 +1274,12 @@ body.dark .search-input::placeholder { color: #9ca3af; }
 body.dark .rectoria-modal { background: #1f2937; border: 1px solid #374151; }
 body.dark .rectoria-header { background: #1f2937; border-bottom: 1px solid #374151; }
 body.dark .rectoria-title { color: #f9fafb; }
-
+body.dark .action-modal { background: #1f2937; border: 1px solid #374151; color: #f9fafb; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+body.dark .action-modal-header h3 { color: #f9fafb; }
+body.dark .action-modal-desc { color: #d1d5db; }
+body.dark .auth-input { background: #374151; border-color: #4b5563; color: #f9fafb; }
+body.dark .checkbox-group { color: #f9fafb; }
+body.dark .action-form-group label { color: #9ca3af; }
 /* --- POP ANIMATION ON CLICK --- */
 .icon-btn:active {
   transform: scale(0.9);

@@ -136,6 +136,9 @@ export default function Dashboard() {
 
   // UX State
   const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('navegaltos-dark-mode');
+    if (saved !== null) return saved === 'true';
+    // First time: use OS preference
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
@@ -145,6 +148,7 @@ export default function Dashboard() {
     } else {
       document.body.classList.remove('dark');
     }
+    localStorage.setItem('navegaltos-dark-mode', String(darkMode));
   }, [darkMode]);
 
   // Routing State
@@ -1328,7 +1332,18 @@ export default function Dashboard() {
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
             {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
-                <button className="btn-secondary btn-public" onClick={() => { setPublicPinData(selectedPin); setShowMakePublicModal(true); setSelectedPin(null); }}>
+                <button className="btn-secondary btn-public" onClick={() => { 
+                  setPublicPinData(selectedPin); 
+                  setOwnerName('');
+                  setPinDescription('');
+                  setHasSchedule(false);
+                  setOpenTime('08:00');
+                  setCloseTime('18:00');
+                  setAvailableDays([]);
+                  setPinCategory('');
+                  setShowMakePublicModal(true); 
+                  setSelectedPin(null); 
+                }}>
                   <Globe size={14} /> Hacer Público
                 </button>
                 <button className="btn-secondary btn-danger" onClick={async () => {
@@ -1471,6 +1486,7 @@ export default function Dashboard() {
             <div className="action-form-group">
               <label>CATEGORÍA</label>
               <select className="auth-input" style={{ fontFamily: "'Inter', sans-serif" }} value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
+                <option value="" disabled>Selecciona una categoría</option>
                 {filters.map(f => (
                   <option key={f.id} value={f.id}>{f.label}</option>
                 ))}
@@ -1478,6 +1494,11 @@ export default function Dashboard() {
             </div>
 
             <button className="btn-modal-submit btn-public-submit" onClick={async () => {
+              if (!pinCategory) {
+                alert('Por favor, selecciona una categoría para el pin.');
+                return;
+              }
+
               if (!ownerName) {
                 alert('Por favor, indica a quién le pertenece este pin.');
                 return;

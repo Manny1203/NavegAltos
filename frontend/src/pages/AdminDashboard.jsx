@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
-  Menu, X, MapPin, Users, AlertTriangle, Flag,
-  Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope, Clock
+  Menu, X, MapPin, Users, AlertTriangle, Flag, Globe, FileText,
+  Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope, Clock, Move, EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import mapImage from '../assets/mapaUniversidadVector.svg';
@@ -21,7 +21,11 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [publicPins, setPublicPins] = useState([]);
   const [reports, setReports] = useState([]);
+  const [historyTickets, setHistoryTickets] = useState([]);
+  const [editingRequest, setEditingRequest] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [movingPin, setMovingPin] = useState(null);
 
   // Edit State
   const [editingPin, setEditingPin] = useState(null);
@@ -82,11 +86,32 @@ export default function AdminDashboard() {
     // Load Pin Reports
     const { data: reportsData, error: reportsError } = await supabase
       .from('pin_reports')
-      .select('*, pins(name, category)')
+      .select('*, pins(*)')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (!reportsError && reportsData) setReports(reportsData);
+
+    // Load History Tickets
+    const { data: histReqData } = await supabase
+      .from('pin_requests')
+      .select('*, pins(*)')
+      .neq('status', 'pending');
+
+    const { data: histRepData } = await supabase
+      .from('pin_reports')
+      .select('*, pins(*)')
+      .neq('status', 'pending');
+
+    let combinedHistory = [];
+    if (histReqData) {
+      combinedHistory = [...combinedHistory, ...histReqData.map(item => ({ ...item, ticket_type: 'request' }))];
+    }
+    if (histRepData) {
+      combinedHistory = [...combinedHistory, ...histRepData.map(item => ({ ...item, ticket_type: 'report' }))];
+    }
+    combinedHistory.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    setHistoryTickets(combinedHistory);
   };
 
   const handleApprove = async (request) => {
@@ -177,6 +202,92 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleMapClick = async (e, mapId) => {
+    if (!isZenMode || !movingPin) return;
+    e.stopPropagation();
+
+    // Find the img element within the clicked container to get its true rendered size
+    const img = e.currentTarget.querySelector('img');
+    if (!img) return;
+
+    const rect = img.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    if (x < 0 || x > 100 || y < 0 || y > 100) return;
+
+    // Validate collision
+    const collisionThreshold = 3;
+    let collision = false;
+    for (const pin of publicPins) {
+      if (pin.id === movingPin.id) continue;
+      const pMapId = pin.map_id || 'main';
+      const mapToCheck = mapId || 'main';
+      if (pMapId !== mapToCheck) continue;
+      if (mapToCheck !== 'main' && pin.floor !== selectedFloor) continue;
+
+      const pinX = pin.x || pin.x_coordinate;
+      const pinY = pin.y || pin.y_coordinate;
+
+      const dist = Math.hypot(pinX - x, pinY - y);
+      if (dist < collisionThreshold) {
+        collision = true;
+        break;
+      }
+    }
+
+    if (collision) {
+      alert('Esta ubicación está muy cerca de otro pin. Selecciona un lugar más despejado.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('pins')
+        .update({ x_coordinate: x, y_coordinate: y })
+        .eq('id', movingPin.id);
+
+      if (error) throw error;
+      alert('Pin movido exitosamente.');
+      setIsZenMode(false);
+      setMovingPin(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Error moviendo pin: ' + (err.message || JSON.stringify(err)));
+    }
+  };
+
+  const handleUpdateRequest = async () => {
+    try {
+      let days = editingRequest.available_days;
+      if (Array.isArray(days)) {
+        days = JSON.stringify(days);
+      }
+
+      const { error } = await supabase
+        .from('pin_requests')
+        .update({
+          requester_name: editingRequest.requester_name,
+          description: editingRequest.description,
+          has_schedule: editingRequest.has_schedule,
+          open_time: editingRequest.open_time,
+          close_time: editingRequest.close_time,
+          available_days: days
+        })
+        .eq('id', editingRequest.id);
+
+      if (error) throw error;
+
+      alert('Solicitud actualizada correctamente.');
+      setEditingRequest(null);
+      loadData();
+    } catch (e) {
+      console.error(e);
+      alert('Error actualizando solicitud.');
+    }
+  };
+
   const handleUpdatePin = async () => {
     try {
       if (!editingPin.name) {
@@ -184,11 +295,23 @@ export default function AdminDashboard() {
         return;
       }
 
+      let days = editingPin.available_days;
+      if (Array.isArray(days)) {
+        days = JSON.stringify(days);
+      }
+
       const { error } = await supabase
         .from('pins')
         .update({
           name: editingPin.name,
-          category: editingPin.category
+          category: editingPin.category,
+          description: editingPin.description,
+          icon: editingPin.icon,
+          color: editingPin.color,
+          has_schedule: editingPin.has_schedule,
+          open_time: editingPin.open_time,
+          close_time: editingPin.close_time,
+          available_days: days
         })
         .eq('id', editingPin.id);
 
@@ -288,12 +411,21 @@ export default function AdminDashboard() {
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
+
+        {isZenMode && (
+          <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', background: '#003056', color: 'white', padding: '12px 24px', borderRadius: '24px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+            <span style={{ fontWeight: 'bold' }}>Modo Relocalización: Haz clic en el mapa para mover el pin</span>
+            <button onClick={() => { setIsZenMode(false); setMovingPin(null); setIsSidebarOpen(true); }} style={{ background: 'transparent', border: '1px solid white', color: 'white', padding: '4px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>
+              Cancelar
+            </button>
+          </div>
+        )}
         
         {/* Left Sidebar */}
         <div
           className="admin-sidebar"
           style={{
-            transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transform: (isSidebarOpen && !isZenMode) ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 50
           }}
@@ -322,6 +454,13 @@ export default function AdminDashboard() {
               <Flag size={18} />
               <span>Reportes</span>
               {reports.length > 0 && <span className="admin-badge">{reports.length}</span>}
+            </button>
+            <button
+              className={`admin-nav-item ${activeTab === 'history' ? 'active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <FileText size={18} />
+              <span>Historial</span>
             </button>
             {/* Ocultamos Usuarios como pediste */}
           </div>
@@ -395,9 +534,11 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="admin-card-actions">
-                        <button className="btn-reject" onClick={() => handleReject(req)}>Rechazar</button>
-                        <button className="btn-approve" onClick={() => handleApprove(req)}>Aprobar</button>
+                      <div className="admin-card-actions" style={{ flexWrap: 'wrap' }}>
+                        <button style={{ flex: '1 1 45%', padding: '8px', background: '#f3f4f6', color: '#4b5563', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setSelectedPin(req.pins)}>Ver Ubicación</button>
+                        <button style={{ flex: '1 1 45%', padding: '8px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setEditingRequest(req)}>Editar</button>
+                        <button className="btn-reject" style={{ flex: '1 1 45%' }} onClick={() => handleReject(req)}>Rechazar</button>
+                        <button className="btn-approve" style={{ flex: '1 1 45%' }} onClick={() => handleApprove(req)}>Aprobar</button>
                       </div>
                     </div>
                   ))
@@ -425,8 +566,45 @@ export default function AdminDashboard() {
                       </p>
                       <div className="admin-card-actions">
                         <button className="btn-reject" onClick={() => handleDismissReport(report.id)}>Descartar</button>
+                        <button style={{ flex: 1, padding: '8px', background: '#f3f4f6', color: '#4b5563', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => {
+                          const pin = report.pins;
+                          if (!pin) return;
+                          // Switch to the correct map first
+                          const mapId = pin.map_id || 'main';
+                          if (mapId !== 'main') {
+                            setCurrentBuilding(mapId);
+                            if (pin.floor) setSelectedFloor(pin.floor);
+                          } else {
+                            setCurrentBuilding(null);
+                          }
+                          setSelectedPin(pin);
+                        }}>Ver Pin</button>
                         <button className="btn-approve" onClick={() => handleResolveReport(report)}>Resuelto</button>
                       </div>
+                    </div>
+                  ))
+                )
+              )}
+
+              {activeTab === 'history' && (
+                historyTickets.length === 0 ? (
+                  <p className="admin-empty">No hay historial de tickets.</p>
+                ) : (
+                  historyTickets.map(ticket => (
+                    <div key={ticket.id + ticket.ticket_type} className="admin-card" style={{ opacity: 0.8 }}>
+                      <div className="admin-card-header">
+                        <div className={`admin-card-icon ${ticket.ticket_type === 'request' ? 'req-icon' : ''}`} style={{ background: ticket.ticket_type === 'request' ? '#dbeafe' : '#fee2e2' }}>
+                          {ticket.ticket_type === 'request' ? <Globe size={14} color="#3b82f6" /> : <Flag size={14} color="#ef4444" />}
+                        </div>
+                        <div className="admin-card-title-group">
+                          <h5>{ticket.pins?.name || 'Pin desconocido'}</h5>
+                          <span className="admin-date">{new Date(ticket.created_at).toLocaleDateString('es-MX')}</span>
+                        </div>
+                      </div>
+                      <p className="admin-card-desc">
+                        <strong>Tipo:</strong> {ticket.ticket_type === 'request' ? 'Solicitud Público' : 'Reporte'}<br />
+                        <strong>Estado:</strong> <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{ticket.status}</span>
+                      </p>
                     </div>
                   ))
                 )
@@ -473,7 +651,7 @@ export default function AdminDashboard() {
             limitToBounds={true}
           >
             <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
+              <div style={{ position: 'relative', display: 'inline-block', cursor: isZenMode ? 'crosshair' : 'default' }} onClick={(e) => handleMapClick(e, 'main')}>
                 <img
                   src={mapImage}
                   alt="Mapa Universitario"
@@ -577,7 +755,7 @@ export default function AdminDashboard() {
                 >
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                     <div className="rectoria-map-container">
-                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <div style={{ position: 'relative', display: 'inline-block', cursor: isZenMode ? 'crosshair' : 'default' }} onClick={(e) => handleMapClick(e, currentBuilding)}>
                         <img
                           src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
                           alt="Rectoria"
@@ -666,18 +844,130 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', fontWeight: '700', cursor: 'pointer' }}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', background: '#f3f4f6', color: '#4b5563', border: 'none', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}
               onClick={() => { setEditingPin(selectedPin); setSelectedPin(null); }}
             >
-              <Edit2 size={16} /> Editar
+              <Edit2 size={14} /> Editar
             </button>
             <button
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: '#fef2f2', color: '#cf1010', border: 'none', fontWeight: '700', cursor: 'pointer' }}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', background: '#e0f2fe', color: '#0369a1', border: 'none', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}
+              onClick={() => { setMovingPin(selectedPin); setIsZenMode(true); setSelectedPin(null); }}
+            >
+              <Move size={14} /> Mover
+            </button>
+            <button
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', background: '#fef2f2', color: '#cf1010', border: 'none', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}
               onClick={() => { handleDeletePin(selectedPin.id); setSelectedPin(null); }}
             >
-              <Trash2 size={16} /> Eliminar
+              <Trash2 size={14} /> Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Request Modal */}
+      {editingRequest && (
+        <div className="action-modal-overlay">
+          <div className="admin-edit-modal">
+            <button className="rectoria-close-btn" onClick={() => setEditingRequest(null)} style={{ position: 'absolute', top: '16px', right: '16px' }}>
+              <X size={16} color="#6b7280" />
+            </button>
+
+            <div className="action-modal-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Edit2 size={24} color="#003056" />
+              <h3 style={{ margin: 0, fontSize: '18px' }}>Editar Solicitud</h3>
+            </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px' }}>
+              <label>DUEÑO PROPUESTO</label>
+              <input
+                type="text"
+                value={editingRequest.requester_name || ''}
+                onChange={(e) => setEditingRequest({ ...editingRequest, requester_name: e.target.value })}
+              />
+            </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px' }}>
+              <label>DESCRIPCIÓN</label>
+              <textarea
+                rows="3"
+                value={editingRequest.description || ''}
+                onChange={(e) => setEditingRequest({ ...editingRequest, description: e.target.value })}
+              />
+            </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="req_has_schedule"
+                checked={editingRequest.has_schedule || false}
+                onChange={(e) => setEditingRequest({ ...editingRequest, has_schedule: e.target.checked })}
+                style={{ width: 'auto' }}
+              />
+              <label htmlFor="req_has_schedule" style={{ margin: 0 }}>TIENE HORARIO</label>
+            </div>
+
+            {editingRequest.has_schedule && (
+              <>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                  <div className="action-form-group" style={{ flex: 1 }}>
+                    <label>APERTURA</label>
+                    <input
+                      type="time"
+                      value={editingRequest.open_time || '08:00'}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, open_time: e.target.value })}
+                    />
+                  </div>
+                  <div className="action-form-group" style={{ flex: 1 }}>
+                    <label>CIERRE</label>
+                    <input
+                      type="time"
+                      value={editingRequest.close_time || '18:00'}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, close_time: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="action-form-group" style={{ marginBottom: '24px' }}>
+                  <label>DÍAS DISPONIBLES</label>
+                  <div className="day-checkboxes">
+                    {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => {
+                      let currentDays = ['L', 'M', 'Mi', 'J', 'V'];
+                      if (editingRequest.available_days) {
+                        try {
+                          currentDays = Array.isArray(editingRequest.available_days) 
+                            ? editingRequest.available_days 
+                            : JSON.parse(editingRequest.available_days);
+                        } catch (e) {
+                          console.error("Error parsing days", e);
+                        }
+                      }
+                      const isActive = currentDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          className={`day-btn ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            const newDays = isActive ? currentDays.filter(d => d !== day) : [...currentDays, day];
+                            setEditingRequest({ ...editingRequest, available_days: newDays });
+                          }}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={handleUpdateRequest}
+              style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#003056', color: 'white', fontWeight: '700', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+            >
+              <Check size={18} /> Guardar Cambios
             </button>
           </div>
         </div>
@@ -686,42 +976,144 @@ export default function AdminDashboard() {
       {/* Edit Pin Modal */}
       {editingPin && (
         <div className="action-modal-overlay">
-          <div className="action-modal" style={{ background: 'white', padding: '24px', borderRadius: '16px', width: '360px', position: 'relative' }}>
-            <button className="btn-close" onClick={() => setEditingPin(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={20} color="#6b7280" style={{ display: 'block', width: '20px', height: '20px' }} />
-              </span>
+          <div className="admin-edit-modal">
+            <button className="rectoria-close-btn" onClick={() => setEditingPin(null)} style={{ position: 'absolute', top: '16px', right: '16px' }}>
+              <X size={16} color="#6b7280" />
             </button>
 
             <div className="action-modal-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Edit2 size={24} color="#003056" />
-              <h3 style={{ margin: 0, color: '#003056', fontSize: '18px' }}>Editar Pin</h3>
+              <h3 style={{ margin: 0, fontSize: '18px' }}>Editar Pin</h3>
             </div>
 
             <div className="action-form-group" style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>NOMBRE</label>
+              <label>NOMBRE</label>
               <input
                 type="text"
                 value={editingPin.name || ''}
                 onChange={(e) => setEditingPin({ ...editingPin, name: e.target.value })}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div className="action-form-group" style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>CATEGORÍA</label>
+            <div className="action-form-group" style={{ marginBottom: '16px' }}>
+              <label>CATEGORÍA</label>
               <select
                 value={editingPin.category || ''}
                 onChange={(e) => setEditingPin({ ...editingPin, category: e.target.value })}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', outline: 'none', background: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
               >
                 <option value="aulas">Aulas</option>
                 <option value="canchas">Canchas</option>
                 <option value="cafeteria">Cafetería</option>
                 <option value="banos">Baños</option>
                 <option value="laboratorios">Laboratorios</option>
+                <option value="oficinas">Oficinas</option>
+                <option value="otros">Otros</option>
               </select>
             </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px' }}>
+              <label>DESCRIPCIÓN</label>
+              <textarea
+                rows="3"
+                value={editingPin.description || ''}
+                onChange={(e) => setEditingPin({ ...editingPin, description: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <div className="action-form-group" style={{ flex: 1 }}>
+                <label>COLOR</label>
+                <div className="admin-color-picker">
+                  {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
+                    <div
+                      key={color}
+                      className={`admin-color-circle ${editingPin.color === color ? 'selected' : ''}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setEditingPin({ ...editingPin, color })}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="action-form-group" style={{ flex: 1 }}>
+                <label>ICONO</label>
+                <select
+                  value={editingPin.icon || 'map-pin'}
+                  onChange={(e) => setEditingPin({ ...editingPin, icon: e.target.value })}
+                >
+                  <option value="map-pin">Pin</option>
+                  <option value="coffee">Cafetería</option>
+                  <option value="book-open">Libro</option>
+                  <option value="car">Coche</option>
+                  <option value="microscope">Laboratorio</option>
+                  <option value="users">Usuarios</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="has_schedule"
+                checked={editingPin.has_schedule || false}
+                onChange={(e) => setEditingPin({ ...editingPin, has_schedule: e.target.checked })}
+                style={{ width: 'auto' }}
+              />
+              <label htmlFor="has_schedule" style={{ margin: 0 }}>TIENE HORARIO</label>
+            </div>
+
+            {editingPin.has_schedule && (
+              <>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                  <div className="action-form-group" style={{ flex: 1 }}>
+                    <label>APERTURA</label>
+                    <input
+                      type="time"
+                      value={editingPin.open_time || '08:00'}
+                      onChange={(e) => setEditingPin({ ...editingPin, open_time: e.target.value })}
+                    />
+                  </div>
+                  <div className="action-form-group" style={{ flex: 1 }}>
+                    <label>CIERRE</label>
+                    <input
+                      type="time"
+                      value={editingPin.close_time || '18:00'}
+                      onChange={(e) => setEditingPin({ ...editingPin, close_time: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="action-form-group" style={{ marginBottom: '24px' }}>
+                  <label>DÍAS DISPONIBLES</label>
+                  <div className="day-checkboxes">
+                    {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => {
+                      let currentDays = ['L', 'M', 'Mi', 'J', 'V'];
+                      if (editingPin.available_days) {
+                        try {
+                          currentDays = Array.isArray(editingPin.available_days) 
+                            ? editingPin.available_days 
+                            : JSON.parse(editingPin.available_days);
+                        } catch (e) {
+                          console.error("Error parsing days", e);
+                        }
+                      }
+                      const isActive = currentDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          className={`day-btn ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            const newDays = isActive ? currentDays.filter(d => d !== day) : [...currentDays, day];
+                            setEditingPin({ ...editingPin, available_days: newDays });
+                          }}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               onClick={handleUpdatePin}
