@@ -11,6 +11,34 @@ import rectoriaPB from '../assets/rectoria_pb.jpeg';
 import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import '../styles/admin-dashboard.css';
 
+// Location Icons
+import avionIcon from '../assets/iconosLocalizacion/Avión.svg';
+import camaronIcon from '../assets/iconosLocalizacion/Camarón.svg';
+import chincheIcon from '../assets/iconosLocalizacion/Chinche.svg';
+import huevoIcon from '../assets/iconosLocalizacion/Huevo.svg';
+import joeIcon from '../assets/iconosLocalizacion/Joe.svg';
+import leoIcon from '../assets/iconosLocalizacion/Leo.svg';
+import pin2Icon from '../assets/iconosLocalizacion/Pin 2.svg';
+import pinIcon from '../assets/iconosLocalizacion/Pin.svg';
+import pollitoIcon from '../assets/iconosLocalizacion/Pollito.svg';
+import ranaIcon from '../assets/iconosLocalizacion/Rana.svg';
+import vacaIcon from '../assets/iconosLocalizacion/Vaca.svg';
+
+const locationIcons = [
+  { id: 'default', name: 'Predeterminado', src: null },
+  { id: 'avion', name: 'Avión', src: avionIcon },
+  { id: 'camaron', name: 'Camarón', src: camaronIcon },
+  { id: 'chinche', name: 'Chinche', src: chincheIcon },
+  { id: 'huevo', name: 'Huevo', src: huevoIcon },
+  { id: 'joe', name: 'Joe', src: joeIcon },
+  { id: 'leo', name: 'Leo', src: leoIcon },
+  { id: 'pin2', name: 'Pin 2', src: pin2Icon },
+  { id: 'pin', name: 'Pin', src: pinIcon },
+  { id: 'pollito', name: 'Pollito', src: pollitoIcon },
+  { id: 'rana', name: 'Rana', src: ranaIcon },
+  { id: 'vaca', name: 'Vaca', src: vacaIcon }
+];
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -34,6 +62,16 @@ export default function AdminDashboard() {
   // Building State
   const [currentBuilding, setCurrentBuilding] = useState(null); // null means 'main' map
   const [selectedFloor, setSelectedFloor] = useState('PB'); // 'PB' or 'N1'
+
+  // Icon Customizer State
+  const [showIconCustomizer, setShowIconCustomizer] = useState(false);
+  const [userLocationIcon, setUserLocationIcon] = useState(() => {
+    return localStorage.getItem('user-location-icon') || 'default';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('user-location-icon', userLocationIcon);
+  }, [userLocationIcon]);
 
   // Checking Auth
   useEffect(() => {
@@ -462,6 +500,13 @@ export default function AdminDashboard() {
               <FileText size={18} />
               <span>Historial</span>
             </button>
+            <button
+              className="admin-nav-item"
+              onClick={() => { setShowIconCustomizer(true); if(window.innerWidth <= 768) setIsSidebarOpen(false); }}
+            >
+              <MapPin size={18} />
+              <span>Personalizar Ícono</span>
+            </button>
             {/* Ocultamos Usuarios como pediste */}
           </div>
 
@@ -639,6 +684,67 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Icon Customizer Modal */}
+        {showIconCustomizer && (
+          <div className="action-modal-overlay" style={{ zIndex: 1100 }}>
+            <div className="action-modal" style={{ maxWidth: '400px' }}>
+              <button className="btn-close" onClick={() => setShowIconCustomizer(false)}>
+                <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+                </span>
+              </button>
+              <div className="action-modal-header" style={{ marginBottom: '16px' }}>
+                <MapPin size={24} color="#3b82f6" />
+                <h3 style={{ margin: 0, color: '#003056' }}>Personalizar Ícono</h3>
+              </div>
+              <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+                Selecciona un ícono para representar tu ubicación actual en el mapa.
+              </p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxHeight: '400px', overflowY: 'auto', padding: '4px' }}>
+                {locationIcons.map(icon => (
+                  <div 
+                    key={icon.id}
+                    onClick={() => setUserLocationIcon(icon.id)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      background: userLocationIcon === icon.id ? '#eff6ff' : '#f9fafb',
+                      border: `2px solid ${userLocationIcon === icon.id ? '#3b82f6' : 'transparent'}`,
+                      transition: 'all 0.2s ease',
+                      boxShadow: userLocationIcon === icon.id ? '0 4px 12px rgba(59, 130, 246, 0.2)' : 'none'
+                    }}
+                  >
+                    <div style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                      {icon.src ? (
+                        <img src={icon.src} alt={icon.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        <div style={{ width: '18px', height: '18px', backgroundColor: '#3b82f6', borderRadius: '50%', border: '3px solid white', boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)' }}></div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: userLocationIcon === icon.id ? 'bold' : 'normal', color: userLocationIcon === icon.id ? '#1d4ed8' : '#4b5563', textAlign: 'center' }}>
+                      {icon.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                className="btn-modal-submit" 
+                style={{ marginTop: '20px', background: '#3b82f6' }}
+                onClick={() => setShowIconCustomizer(false)}
+              >
+                <Check size={16} /> Listo
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Right Content Area (Interactive Map) */}
         <div className="admin-map-area">

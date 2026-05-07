@@ -24,6 +24,34 @@ import rectoriaN1 from '../assets/rectoria_n1.jpeg';
 import { supabase } from '../lib/supabase';
 import '../styles/dashboard.css';
 
+// Location Icons
+import avionIcon from '../assets/iconosLocalizacion/Avión.svg';
+import camaronIcon from '../assets/iconosLocalizacion/Camarón.svg';
+import chincheIcon from '../assets/iconosLocalizacion/Chinche.svg';
+import huevoIcon from '../assets/iconosLocalizacion/Huevo.svg';
+import joeIcon from '../assets/iconosLocalizacion/Joe.svg';
+import leoIcon from '../assets/iconosLocalizacion/Leo.svg';
+import pin2Icon from '../assets/iconosLocalizacion/Pin 2.svg';
+import pinIcon from '../assets/iconosLocalizacion/Pin.svg';
+import pollitoIcon from '../assets/iconosLocalizacion/Pollito.svg';
+import ranaIcon from '../assets/iconosLocalizacion/Rana.svg';
+import vacaIcon from '../assets/iconosLocalizacion/Vaca.svg';
+
+const locationIcons = [
+  { id: 'default', name: 'Predeterminado', src: null },
+  { id: 'avion', name: 'Avión', src: avionIcon },
+  { id: 'camaron', name: 'Camarón', src: camaronIcon },
+  { id: 'chinche', name: 'Chinche', src: chincheIcon },
+  { id: 'huevo', name: 'Huevo', src: huevoIcon },
+  { id: 'joe', name: 'Joe', src: joeIcon },
+  { id: 'leo', name: 'Leo', src: leoIcon },
+  { id: 'pin2', name: 'Pin 2', src: pin2Icon },
+  { id: 'pin', name: 'Pin', src: pinIcon },
+  { id: 'pollito', name: 'Pollito', src: pollitoIcon },
+  { id: 'rana', name: 'Rana', src: ranaIcon },
+  { id: 'vaca', name: 'Vaca', src: vacaIcon }
+];
+
 const buildingMaps = {
   main: mapImage,
   A: mapImageA, B: mapImageB, C: mapImageC, D: mapImageD,
@@ -49,6 +77,15 @@ export default function Dashboard() {
 
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
+  const [showIconCustomizer, setShowIconCustomizer] = useState(false);
+  
+  const [userLocationIcon, setUserLocationIcon] = useState(() => {
+    return localStorage.getItem('user-location-icon') || 'default';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('user-location-icon', userLocationIcon);
+  }, [userLocationIcon]);
 
   // Modals state
   const [showMakePublicModal, setShowMakePublicModal] = useState(false);
@@ -526,6 +563,19 @@ export default function Dashboard() {
                 </>
               )}
               
+              {/* Personalizar Ícono */}
+              <button
+                className="menu-sidebar-item"
+                onClick={() => { setShowIconCustomizer(true); setShowMenuSidebar(false); }}
+                style={{ marginBottom: '8px' }}
+              >
+                <MapPin size={20} color="#3b82f6" />
+                <div className="menu-item-text">
+                  <span className="menu-item-label">Personalizar Ícono</span>
+                  <span className="menu-item-desc">Cambia el estilo de tu ubicación</span>
+                </div>
+              </button>
+
               {/* Dark Mode Toggle */}
               <button
                 className="menu-sidebar-item"
@@ -862,6 +912,67 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Icon Customizer Modal */}
+      {showIconCustomizer && (
+        <div className="action-modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="action-modal" style={{ maxWidth: '400px' }}>
+            <button className="btn-close" onClick={() => setShowIconCustomizer(false)}>
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+            </button>
+            <div className="action-modal-header" style={{ marginBottom: '16px' }}>
+              <MapPin size={24} color="#3b82f6" />
+              <h3 style={{ margin: 0, color: '#003056' }}>Personalizar Ícono</h3>
+            </div>
+            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+              Selecciona un ícono para representar tu ubicación actual en el mapa.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxHeight: '400px', overflowY: 'auto', padding: '4px' }}>
+              {locationIcons.map(icon => (
+                <div 
+                  key={icon.id}
+                  onClick={() => setUserLocationIcon(icon.id)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    background: userLocationIcon === icon.id ? '#eff6ff' : '#f9fafb',
+                    border: `2px solid ${userLocationIcon === icon.id ? '#3b82f6' : 'transparent'}`,
+                    transition: 'all 0.2s ease',
+                    boxShadow: userLocationIcon === icon.id ? '0 4px 12px rgba(59, 130, 246, 0.2)' : 'none'
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                    {icon.src ? (
+                      <img src={icon.src} alt={icon.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <div style={{ width: '18px', height: '18px', backgroundColor: '#3b82f6', borderRadius: '50%', border: '3px solid white', boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)' }}></div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: userLocationIcon === icon.id ? 'bold' : 'normal', color: userLocationIcon === icon.id ? '#1d4ed8' : '#4b5563', textAlign: 'center' }}>
+                    {icon.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              className="btn-modal-submit" 
+              style={{ marginTop: '20px', background: '#3b82f6' }}
+              onClick={() => setShowIconCustomizer(false)}
+            >
+              <Check size={16} /> Listo
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Interactive Map Area */}
       <div
         style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0, zIndex: 1, cursor: markerMode || routeEditMode ? 'crosshair' : 'default' }}
@@ -1133,28 +1244,47 @@ export default function Dashboard() {
                     </div>
                   ))}
 
-                  {/* User Location Blue Dot */}
-                  {userLocation && !currentBuilding && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: `${userLocation.x}%`,
-                        top: `${userLocation.y}%`,
-                        width: '18px',
-                        height: '18px',
-                        backgroundColor: '#3b82f6',
-                        borderRadius: '50%',
-                        border: '3px solid white',
-                        boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 20,
-                        transition: 'left 1s linear, top 1s linear'
-                      }}
-                      title="Tu Ubicación"
-                    >
-                      <div className="gps-pulse"></div>
-                    </div>
-                  )}
+                  {/* User Location */}
+                  {userLocation && !currentBuilding && (() => {
+                    const activeIcon = locationIcons.find(i => i.id === userLocationIcon) || locationIcons[0];
+                    return (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${userLocation.x}%`,
+                          top: `${userLocation.y}%`,
+                          width: activeIcon.id === 'default' ? '18px' : '40px',
+                          height: activeIcon.id === 'default' ? '18px' : '40px',
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 20,
+                          transition: 'left 1s linear, top 1s linear',
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        title="Tu Ubicación"
+                      >
+                        {activeIcon.id === 'default' ? (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#3b82f6',
+                            borderRadius: '50%',
+                            border: '3px solid white',
+                            boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)'
+                          }}>
+                            <div className="gps-pulse"></div>
+                          </div>
+                        ) : (
+                          <div style={{ position: 'relative', width: '100%', height: '100%', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.3))' }}>
+                            <img src={activeIcon.src} alt={activeIcon.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <div className="gps-pulse" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '20px', height: '20px' }}></div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </TransformComponent>
             </React.Fragment>
