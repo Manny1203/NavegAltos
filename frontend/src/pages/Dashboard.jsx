@@ -1554,7 +1554,7 @@ export default function Dashboard() {
             </button>
             <div className="action-modal-header">
               <AlertTriangle size={20} color="#cf1010" />
-              <h3 style={{ color: '#003056' }}>Reportar Pin</h3>
+              <h3>Reportar Pin</h3>
             </div>
             <p className="action-modal-desc">
               Ayúdanos a mantener el mapa limpio. Cuéntanos por qué este pin es innecesario o incorrecto.

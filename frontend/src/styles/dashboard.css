@@ -1012,6 +1012,31 @@ textarea.auth-input {
   resize: vertical;
 }
 
+/* Override login-style padding when used inside modals */
+.action-modal .auth-input,
+.action-modal input,
+.action-modal textarea,
+.action-modal select {
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  background: #f9fafb;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.action-modal .auth-input:focus,
+.action-modal input:focus,
+.action-modal textarea:focus,
+.action-modal select:focus {
+  border-color: #003056;
+  box-shadow: 0 0 0 3px rgba(0,48,86,0.1);
+  background: white;
+}
+
 /* Modals Submit Buttons */
 .action-modal .btn-modal-submit {
   width: 100%;
@@ -1182,22 +1207,24 @@ body.dark .rectoria-close-btn { background: #374151; }
 
   /* Right Sidebar repositioning */
   .right-sidebar {
-    bottom: 90px;
-    right: 16px;
+    bottom: 80px;
+    right: 12px;
+    gap: 10px;
   }
   .right-sidebar .icon-btn {
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
   }
 
   /* Zoom controls repositioning */
   .zoom-controls {
-    bottom: 230px;
-    right: 16px;
+    bottom: 385px;
+    right: 12px;
+    gap: 6px;
   }
   .zoom-controls .icon-btn {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
   }
 
   /* Modals and Menus width adjustments */
@@ -1275,11 +1302,18 @@ body.dark .rectoria-modal { background: #1f2937; border: 1px solid #374151; }
 body.dark .rectoria-header { background: #1f2937; border-bottom: 1px solid #374151; }
 body.dark .rectoria-title { color: #f9fafb; }
 body.dark .action-modal { background: #1f2937; border: 1px solid #374151; color: #f9fafb; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+body.dark .action-modal-header { color: #f9fafb; }
 body.dark .action-modal-header h3 { color: #f9fafb; }
 body.dark .action-modal-desc { color: #d1d5db; }
-body.dark .auth-input { background: #374151; border-color: #4b5563; color: #f9fafb; }
-body.dark .checkbox-group { color: #f9fafb; }
+body.dark .action-modal .auth-input,
+body.dark .action-modal input,
+body.dark .action-modal textarea,
+body.dark .action-modal select { background: #374151; border-color: #4b5563; color: #f9fafb; }
+body.dark .action-modal .auth-input:focus,
+body.dark .action-modal input:focus,
+body.dark .action-modal textarea:focus { background: #374151; border-color: #6b7280; }
 body.dark .action-form-group label { color: #9ca3af; }
+body.dark .checkbox-group { color: #f9fafb; }
 /* --- POP ANIMATION ON CLICK --- */
 .icon-btn:active {
   transform: scale(0.9);
