@@ -1037,8 +1037,8 @@ export default function Dashboard() {
                     const n2 = graphNodes.find(n => n.id === edge.node2Id);
                     if (!n1 || !n2) return null;
                     return (
-                      <svg key={edge.id} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 11 }}>
-                        <line x1={`${n1.x}%`} y1={`${n1.y}%`} x2={`${n2.x}%`} y2={`${n2.y}%`} stroke="#E25E24" strokeWidth="3" opacity="0.8" />
+                      <svg key={edge.id} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 11 }}>
+                        <line x1={n1.x} y1={n1.y} x2={n2.x} y2={n2.y} stroke="#E25E24" strokeWidth="0.3" opacity="0.8" />
                       </svg>
                     );
                   })}
@@ -1086,19 +1086,31 @@ export default function Dashboard() {
 
                   {/* Calculated Route SVG */}
                   {currentRoute && !routeEditMode && targetPin && (
-                    <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9 }}>
-                      {/* Polyline connecting user -> node -> node -> pin */}
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9 }}>
+                      {/* Glowing outer stroke for light mode visibility */}
                       <polyline
-                        points={`
-                          ${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}
-                          ${currentRoute.map(n => `${n.x},${n.y}`).join(' ')}
-                          ${targetPin.x_coordinate},${targetPin.y_coordinate}
-                        `}
+                        points={[
+                          `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
+                          ...currentRoute.map(n => `${n.x},${n.y}`),
+                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                        ].join(' ')}
+                        fill="none"
+                        stroke="rgba(14,165,233,0.3)"
+                        strokeWidth="1.8"
+                        opacity="1"
+                      />
+                      {/* Dashed route line */}
+                      <polyline
+                        points={[
+                          `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
+                          ...currentRoute.map(n => `${n.x},${n.y}`),
+                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                        ].join(' ')}
                         fill="none"
                         stroke="#0ea5e9"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 4"
-                        opacity="0.8"
+                        strokeWidth="0.6"
+                        strokeDasharray="1.5 1.5"
+                        opacity="1"
                       />
                     </svg>
                   )}
