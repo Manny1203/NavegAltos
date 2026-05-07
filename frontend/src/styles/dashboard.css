@@ -169,11 +169,13 @@
 
 /* Zoom Controls */
 .zoom-controls {
+  position: absolute;
   right: 24px;
-  bottom: 350px;
+  bottom: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  z-index: 100;
 }
 
 .zoom-controls .icon-btn {
@@ -192,7 +194,7 @@
 /* Right Sidebar Buttons */
 .right-sidebar {
   right: 24px;
-  bottom: 120px;
+  bottom: 148px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1205,4 +1207,125 @@ textarea.auth-input {
     justify-content: space-between;
     gap: 8px;
   }
+}
+
+/* --- DARK MODE --- */
+body.dark .dashboard-container { background-color: #111827; color: #f9fafb; }
+body.dark .icon-btn, body.dark .search-bar-container { background: #1f2937; color: #f9fafb; border: 1px solid #374151; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+body.dark .icon-btn:hover { background: #374151; }
+body.dark .menu-sidebar, body.dark .pin-details-sheet, body.dark .map-menu-dropdown { background: #1f2937; color: #f9fafb; border: 1px solid #374151; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+body.dark .menu-sidebar-title, body.dark .pin-sheet-title { color: #f9fafb; }
+body.dark .menu-sidebar-item:hover { background-color: #374151; }
+body.dark .menu-item-label { color: #f9fafb; }
+body.dark .menu-item-desc { color: #9ca3af; }
+body.dark .building-colors-dropdown { background: #1f2937; border-color: #374151; }
+body.dark .color-btn { color: #f9fafb; }
+body.dark .color-btn:hover { background: #374151; }
+body.dark .pin-sheet-close { color: #9ca3af; }
+body.dark .pin-sheet-close:hover { background: #374151; color: #f9fafb; }
+body.dark .search-input { color: #f9fafb; }
+body.dark .search-input::placeholder { color: #9ca3af; }
+body.dark .rectoria-modal { background: #1f2937; border: 1px solid #374151; }
+body.dark .rectoria-header { border-bottom: 1px solid #374151; }
+body.dark .rectoria-title { color: #f9fafb; }
+
+/* --- POP ANIMATION ON CLICK --- */
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+.pin-marker {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pin-marker:hover {
+  transform: scale(1.2);
+}
+
+body.dark .map-image {
+  filter: invert(0.85) hue-rotate(180deg);
+}
+
+body.dark .right-sidebar .icon-btn.sidebar-active {
+  background-color: #E25E24;
+  color: white;
+}
+
+body.dark .rectoria-zoom-btn { background: #374151; color: #f9fafb; }
+body.dark .rectoria-zoom-btn:hover { background: #4b5563; }
+body.dark .rectoria-filter-btn { background: #1f2937; color: #9ca3af; border-color: #374151; }
+body.dark .rectoria-filter-btn:hover { background: #374151; color: #f9fafb; }
+body.dark .rectoria-filter-btn.active { background: #E25E24; color: white; border-color: #E25E24; }
+body.dark .rectoria-add-pin-btn { background: #1f2937; color: #f9fafb; border-color: #374151; }
+body.dark .rectoria-add-pin-btn:hover { background: #374151; }
+
+body.dark .filter-chip { background: #1f2937 !important; color: #9ca3af !important; box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important; }
+body.dark .filter-chip:hover { background: #374151 !important; color: #f9fafb !important; }
+body.dark .filter-chip.active { background: #E25E24 !important; color: white !important; }
+
+/* --- ACTIVE TRIP CARD --- */
+.active-trip-card {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  background: white;
+  border-radius: 20px;
+  padding: 22px 24px 24px;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.2), 0 2px 8px rgba(16, 185, 129, 0.1);
+  z-index: 1000;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 2px solid #10b981;
+}
+
+.active-trip-card .trip-header h3 {
+  margin: 0 0 2px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #003056;
+}
+
+.active-trip-card .trip-subtitle {
+  display: block;
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.active-trip-card .trip-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-cancel-trip {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(207, 16, 16, 0.1);
+  color: #cf1010;
+  font-weight: 700;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-cancel-trip:hover {
+  background: rgba(207, 16, 16, 0.2);
+}
+
+body.dark .active-trip-card {
+  background: #1f2937;
+  border-color: #10b981;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.1);
+}
+body.dark .active-trip-card .trip-header h3 {
+  color: #f9fafb;
 }

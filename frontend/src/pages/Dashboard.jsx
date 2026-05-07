@@ -5,7 +5,7 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun
 } from 'lucide-react';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
@@ -134,11 +134,28 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [routeEditMode, history, historyIndex]);
 
+  // UX State
+  const [darkMode, setDarkMode] = useState(() => {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   // Routing State
   const [campusGraph, setCampusGraph] = useState({ nodes: [], edges: [] });
   const [currentRoute, setCurrentRoute] = useState(null);
   const [routeDistance, setRouteDistance] = useState(0);
   const [routeTime, setRouteTime] = useState(0);
+
+  // Traveling State
+  const [isTraveling, setIsTraveling] = useState(false);
+  const [destinationPin, setDestinationPin] = useState(null);
 
   // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
@@ -250,15 +267,17 @@ export default function Dashboard() {
     }
   };
 
+  const targetPin = isTraveling ? destinationPin : selectedPin;
+
   // Route Calculation Effect
   useEffect(() => {
-    if (!selectedPin || !campusGraph.nodes.length) {
+    if (!targetPin || !campusGraph.nodes.length) {
       setCurrentRoute(null);
       return;
     }
 
     const startPos = userLocation ? { x: userLocation.x, y: userLocation.y } : { x: 21.875, y: 82.018 };
-    const endPos = { x: selectedPin.x_coordinate, y: selectedPin.y_coordinate };
+    const endPos = { x: targetPin.x_coordinate, y: targetPin.y_coordinate };
 
     const startNode = findClosestNode(startPos.x, startPos.y, campusGraph.nodes);
     const endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
@@ -287,7 +306,19 @@ export default function Dashboard() {
         setRouteTime(Math.ceil(meters / 84));
       }
     }
-  }, [selectedPin, userLocation, campusGraph]);
+  }, [targetPin, userLocation, campusGraph]);
+
+  // Arrival Check Effect
+  useEffect(() => {
+    if (isTraveling && destinationPin && userLocation) {
+      // routeDistance is updated continuously based on userLocation.
+      if (routeDistance > 0 && routeDistance < 15) {
+        alert("¡Has llegado a tu destino!");
+        setIsTraveling(false);
+        setDestinationPin(null);
+      }
+    }
+  }, [routeDistance, isTraveling, destinationPin, userLocation]);
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -490,6 +521,23 @@ export default function Dashboard() {
                   </button>
                 </>
               )}
+              
+              {/* Dark Mode Toggle */}
+              <button
+                className="menu-sidebar-item"
+                onClick={() => setDarkMode(!darkMode)}
+                style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
+              >
+                {darkMode ? <Sun size={20} color="#f59e0b" /> : <Moon size={20} color="#6b7280" />}
+                <div className="menu-item-text">
+                  <span className="menu-item-label">
+                    {darkMode ? 'Modo Claro' : 'Modo Oscuro'}
+                    <span style={{ fontSize: '10px', background: '#E25E24', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontWeight: 'bold' }}>BETA</span>
+                  </span>
+                  <span className="menu-item-desc">Cambiar tema visual</span>
+                </div>
+              </button>
+
               <button
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
@@ -686,7 +734,6 @@ export default function Dashboard() {
               <button 
                 className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`} 
                 onClick={() => setShowMapMenu(!showMapMenu)}
-                style={{ background: showMapMenu ? '#E25E24' : 'white', color: showMapMenu ? 'white' : '#333' }}
                 title="Mapa"
               >
                 <MapIcon size={24} />
@@ -726,7 +773,6 @@ export default function Dashboard() {
             <button
               className={`icon-btn sidebar-btn ${visibilityFilter === 'public' ? 'sidebar-active active-filter' : ''}`}
               onClick={() => { setVisibilityFilter(visibilityFilter === 'public' ? 'all' : 'public'); setSelectedPin(null); }}
-              style={{ background: visibilityFilter === 'public' ? '#E25E24' : '', color: visibilityFilter === 'public' ? 'white' : '' }}
               title="Ver pines públicos"
             >
               <Globe size={24} />
@@ -738,7 +784,6 @@ export default function Dashboard() {
                 if(gpsError && !gpsEnabled) alert(gpsError);
                 setGpsEnabled(!gpsEnabled); 
               }}
-              style={{ background: gpsEnabled ? '#E25E24' : 'white', color: gpsEnabled ? 'white' : '#333' }}
               title="Activar GPS"
             >
               <Navigation size={24} />
@@ -754,7 +799,6 @@ export default function Dashboard() {
                 setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
                 setSelectedPin(null);
               }}
-              style={{ background: visibilityFilter === 'private' ? '#E25E24' : '', color: visibilityFilter === 'private' ? 'white' : '' }}
               title="Mis pines privados"
             >
               <Lock size={24} />
@@ -917,12 +961,7 @@ export default function Dashboard() {
               </div>
               <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <img
-                    src={mapImage}
-                    alt="Mapa Universitario"
-                    className="map-image"
-                    style={{ display: 'block' }}
-                  />
+                  {/* Capas de edificios iluminados (se dibujan ABAJO del mapa base) */}
                   {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
                     <div
                       key={letter}
@@ -939,14 +978,21 @@ export default function Dashboard() {
                         maskSize: '100% 100%',
                         WebkitMaskRepeat: 'no-repeat',
                         maskRepeat: 'no-repeat',
-                        mixBlendMode: 'multiply',
                         pointerEvents: 'none',
                         opacity: activeHighlights.includes(letter) ? 1 : 0,
                         transition: 'opacity 0.2s ease',
-                        willChange: 'opacity'
+                        willChange: 'opacity',
+                        zIndex: 1
                       }}
                     />
                   ))}
+                  {/* Mapa base (las líneas del mapa cubrirán las máscaras de color) */}
+                  <img
+                    src={mapImage}
+                    alt="Mapa Universitario"
+                    className="map-image"
+                    style={{ position: 'relative', display: 'block', zIndex: 2 }}
+                  />
 
                   {/* Botón estático para Rectoría */}
                   {!currentBuilding && (
@@ -1035,14 +1081,14 @@ export default function Dashboard() {
                   ))}
 
                   {/* Calculated Route SVG */}
-                  {currentRoute && !routeEditMode && selectedPin && (
+                  {currentRoute && !routeEditMode && targetPin && (
                     <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9 }}>
                       {/* Polyline connecting user -> node -> node -> pin */}
                       <polyline
                         points={`
                           ${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}
                           ${currentRoute.map(n => `${n.x},${n.y}`).join(' ')}
-                          ${selectedPin.x_coordinate},${selectedPin.y_coordinate}
+                          ${targetPin.x_coordinate},${targetPin.y_coordinate}
                         `}
                         fill="none"
                         stroke="#0ea5e9"
@@ -1224,7 +1270,7 @@ export default function Dashboard() {
       )}
 
       {/* Pin Details Modal (Bottom Sheet) */}
-      {selectedPin && (
+      {selectedPin && !isTraveling && (
         <div className="pin-details-sheet" style={{ zIndex: 1000 }}>
           <button className="close-sheet-btn" onClick={() => setSelectedPin(null)}>
             <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
@@ -1309,7 +1355,9 @@ export default function Dashboard() {
               className="btn-primary-large"
               onClick={() => {
                 setGpsEnabled(true);
-                alert("Navegación iniciada. Sigue la ruta azul punteada en el mapa.");
+                setDestinationPin(selectedPin);
+                setIsTraveling(true);
+                setSelectedPin(null);
               }}
             >
               <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
@@ -1318,6 +1366,35 @@ export default function Dashboard() {
               Iniciar Recorrido
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Active Trip Card */}
+      {isTraveling && destinationPin && (
+        <div className="active-trip-card floating-ui">
+          <div className="trip-header">
+            <h3>En ruta hacia: {destinationPin.name}</h3>
+            <span className="trip-subtitle">{routeDistance > 0 ? `${routeDistance} metros restantes` : 'Calculando...'}</span>
+          </div>
+          <div className="trip-stats">
+            <div className="stat-box">
+              <span className="stat-label">DISTANCIA</span>
+              <span className="stat-value">{routeDistance > 0 ? `${routeDistance} m` : '---'}</span>
+            </div>
+            <div className="stat-box">
+              <span className="stat-label">TIEMPO EST.</span>
+              <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
+            </div>
+          </div>
+          <button 
+            className="btn-cancel-trip"
+            onClick={() => {
+              setIsTraveling(false);
+              setDestinationPin(null);
+            }}
+          >
+            <X size={18} /> Cancelar Viaje
+          </button>
         </div>
       )}
       {/* MAKE PUBLIC MODAL */}
