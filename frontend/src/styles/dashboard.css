@@ -1096,6 +1096,52 @@ textarea.auth-input {
   gap: 16px;
 }
 
+.rectoria-floor-toggle {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 4px;
+}
+body.dark .rectoria-floor-toggle { background: #374151; }
+body.dark .rectoria-floor-toggle button:not([style*="#E25E24"]) { color: #f9fafb !important; }
+
+.rectoria-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #003056;
+  border: 1px solid #e2e8f0;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.rectoria-action-btn.active {
+  background: #E25E24;
+  color: white;
+  border-color: #E25E24;
+}
+body.dark .rectoria-action-btn:not(.active) {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+.rectoria-close-btn {
+  background: #f3f4f6;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+body.dark .rectoria-close-btn { background: #374151; }
+
 /* --- RESPONSIVE DESIGN (MOBILE) --- */
 @media (max-width: 768px) {
   /* Search Bar adjustments */
@@ -1226,7 +1272,7 @@ body.dark .pin-sheet-close:hover { background: #374151; color: #f9fafb; }
 body.dark .search-input { color: #f9fafb; }
 body.dark .search-input::placeholder { color: #9ca3af; }
 body.dark .rectoria-modal { background: #1f2937; border: 1px solid #374151; }
-body.dark .rectoria-header { border-bottom: 1px solid #374151; }
+body.dark .rectoria-header { background: #1f2937; border-bottom: 1px solid #374151; }
 body.dark .rectoria-title { color: #f9fafb; }
 
 /* --- POP ANIMATION ON CLICK --- */
@@ -1244,6 +1290,66 @@ body.dark .rectoria-title { color: #f9fafb; }
 
 body.dark .map-image {
   filter: invert(0.85) hue-rotate(180deg);
+}
+body.dark .rectoria-map-image {
+  filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: screen;
+}
+
+body.dark .sheet-header h3 {
+  color: #f9fafb;
+}
+
+.sheet-owner-text {
+  font-size: 13px;
+  color: #003056;
+  font-weight: 600;
+}
+body.dark .sheet-owner-text {
+  color: #93c5fd;
+}
+
+.schedule-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+body.dark .schedule-value {
+  color: #f9fafb;
+}
+
+.rectoria-map-container {
+  background-color: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  display: inline-block;
+}
+
+body.dark .rectoria-map-container {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+body.dark .stat-box {
+  background: #374151;
+}
+body.dark .stat-value {
+  color: #f9fafb;
+}
+
+.sheet-schedule-box {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+}
+body.dark .sheet-schedule-box {
+  background: #374151;
+  border-color: #4b5563;
 }
 
 body.dark .right-sidebar .icon-btn.sidebar-active {

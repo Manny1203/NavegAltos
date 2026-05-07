@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Menu, X, MapPin, Users, AlertTriangle, Flag,
-  Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope
+  Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope, Clock
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import mapImage from '../assets/mapaUniversidadVector.svg';
@@ -485,8 +485,8 @@ export default function AdminDashboard() {
                   <button
                     style={{
                       position: 'absolute',
-                      left: '52.5%',
-                      top: '66.5%',
+                      left: '53.957%',
+                      top: '68.560%',
                       width: '44px',
                       height: '44px',
                       transform: 'translate(-50%, -50%)',
@@ -533,24 +533,19 @@ export default function AdminDashboard() {
 
           {/* RECTORIA MODAL / OVERLAY FOR ADMINS */}
           {currentBuilding === 'rectoria' && (
-            <div style={{
-              position: 'absolute', top: '2%', left: '2%', width: '96%', height: '96%',
-              backgroundColor: '#f1f5f9', borderRadius: '16px', zIndex: 90,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column',
-              overflow: 'hidden', border: '1px solid #e2e8f0'
-            }}>
+            <div className="rectoria-modal" style={{ position: 'absolute', top: '2%', left: '2%', width: '96%', height: '96%' }}>
               {/* Header */}
-              <div style={{ padding: '16px 20px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="rectoria-header">
                 <div>
-                  <h2 style={{ margin: 0, color: '#003056', fontSize: '20px', fontWeight: 'bold' }}>Edificio de Rectoría</h2>
-                  <span style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px', display: 'block' }}>
+                  <h2 className="rectoria-title">Edificio de Rectoría</h2>
+                  <span className="rectoria-subtitle">
                     Gestión de Pines - {selectedFloor === 'PB' ? 'P. Baja' : '1er Nivel'}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* Floor Toggle */}
-                  <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                  <div className="rectoria-floor-toggle">
                     <button
                       style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: selectedFloor === 'PB' ? '#E25E24' : 'transparent', color: selectedFloor === 'PB' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' }}
                       onClick={() => setSelectedFloor('PB')}
@@ -562,7 +557,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <button
-                    style={{ background: '#f3f4f6', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    className="rectoria-close-btn"
                     onClick={() => { setCurrentBuilding(null); }}
                   >
                     <X size={18} color="#6b7280" />
@@ -581,7 +576,7 @@ export default function AdminDashboard() {
                   limitToBounds={false}
                 >
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                    <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
+                    <div className="rectoria-map-container">
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <img
                           src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
@@ -621,13 +616,10 @@ export default function AdminDashboard() {
 
       {/* Pin Details Card (Admin Mode) */}
       {selectedPin && !editingPin && (
-        <div style={{
-          position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)',
-          width: '360px', background: 'white', borderRadius: '20px', padding: '24px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)', zIndex: 1000
-        }}>
+        <div className="admin-pin-card">
           <button
             style={{ position: 'absolute', top: '16px', right: '16px', background: '#f3f4f6', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            className="rectoria-close-btn"
             onClick={() => setSelectedPin(null)}
           >
             <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
@@ -636,11 +628,43 @@ export default function AdminDashboard() {
           </button>
 
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#003056' }}>{selectedPin.name}</h3>
+            <h3>{selectedPin.name}</h3>
             <span style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', display: 'block' }}>
               {selectedPin.category ? selectedPin.category.toUpperCase() : 'SIN CATEGORÍA'}
             </span>
+            {selectedPin.owner && (
+              <span className="sheet-owner-text" style={{ display: 'block', marginTop: '4px' }}>
+                De: {selectedPin.owner}
+              </span>
+            )}
+            
+            {selectedPin.description && (
+              <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.5', marginTop: '12px', marginBottom: '0' }}>
+                {selectedPin.description}
+              </p>
+            )}
           </div>
+
+          {selectedPin.has_schedule && (
+            <div className="sheet-schedule-box">
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>
+                  <Clock size={12} /> HORARIO
+                </span>
+                <span className="schedule-value">
+                  {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
+                </span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
+                <span className="schedule-value">
+                  {Array.isArray(selectedPin.available_days)
+                    ? selectedPin.available_days.join(', ')
+                    : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <button

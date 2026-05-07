@@ -420,3 +420,113 @@
     font-size: 11px;
   }
 }
+
+/* --- DARK MODE --- */
+body.dark .admin-layout { background-color: #111827; color: #f9fafb; }
+body.dark .admin-navbar { background-color: #1f2937; border-bottom: 1px solid #374151; }
+body.dark .admin-sidebar { background-color: #1f2937; border-right: 1px solid #374151; }
+body.dark .admin-nav-item { color: #f9fafb; }
+body.dark .admin-nav-item:hover { background-color: #374151; }
+body.dark .admin-sidebar-menu { border-bottom-color: #374151; }
+body.dark .admin-search { background-color: #374151; border-color: #4b5563; }
+body.dark .admin-search input { background-color: transparent; color: #f9fafb; }
+body.dark .admin-card, body.dark .admin-item-row { background-color: #1f2937; border-color: #374151; }
+body.dark .admin-card-title-group h5, body.dark .admin-item-info h5 { color: #f9fafb; }
+body.dark .admin-card-desc, body.dark .section-title { color: #d1d5db; }
+body.dark .icon-action { background-color: #374151; color: #d1d5db; }
+body.dark .icon-action:hover { background-color: #4b5563; color: #f9fafb; }
+body.dark .admin-map-area { background-color: #111827; }
+
+/* Admin Pin Details Card */
+.admin-pin-card {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+body.dark .admin-pin-card {
+  background: #1f2937;
+  border: 1px solid #374151;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.admin-pin-card h3 { margin: 0; font-size: 18px; font-weight: 800; color: #003056; }
+body.dark .admin-pin-card h3 { color: #f9fafb; }
+
+/* Admin Edit Pin Modal */
+.admin-edit-modal {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 360px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+body.dark .admin-edit-modal {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+.admin-edit-modal .action-modal-header h3 { color: #003056; }
+body.dark .admin-edit-modal .action-modal-header h3 { color: #f9fafb; }
+body.dark .admin-edit-modal .action-modal-header svg { stroke: #f9fafb; }
+.admin-edit-modal .action-form-group label { font-size: 12px; font-weight: 700; color: #9ca3af; display: block; margin-bottom: 8px; }
+.admin-edit-modal input[type="text"], 
+.admin-edit-modal select, 
+.admin-edit-modal textarea, 
+.admin-edit-modal input[type="time"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  outline: none;
+  background: #ffffff;
+  color: #000000;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+body.dark .admin-edit-modal input[type="text"], 
+body.dark .admin-edit-modal select, 
+body.dark .admin-edit-modal textarea, 
+body.dark .admin-edit-modal input[type="time"] {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+/* Day Checkboxes */
+.day-checkboxes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.day-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+body.dark .day-btn {
+  background: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+.day-btn.active {
+  background: #003056;
+  color: white;
+  border-color: #003056;
+}
+body.dark .day-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}

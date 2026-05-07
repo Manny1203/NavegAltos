@@ -465,7 +465,7 @@ export default function Dashboard() {
           <button
             className="icon-btn"
             onClick={toggleMarkerMode}
-            style={{ background: markerMode ? '#E25E24' : 'white', color: markerMode ? 'white' : '#333' }}
+            style={{ background: markerMode ? '#E25E24' : '', color: markerMode ? 'white' : '' }}
           >
             {markerMode ? <X size={24} /> : <Plus size={24} />}
           </button>
@@ -493,9 +493,9 @@ export default function Dashboard() {
                     onClick={() => navigate('/admin')}
                     style={{ marginBottom: '8px' }}
                   >
-                    <Shield size={20} color="#003056" />
+                    <Shield size={20} />
                     <div className="menu-item-text">
-                      <span className="menu-item-label" style={{ color: '#003056' }}>Panel de Control</span>
+                      <span className="menu-item-label">Panel de Control</span>
                       <span className="menu-item-desc">Gestión de pines y solicitudes</span>
                     </div>
                   </button>
@@ -999,8 +999,8 @@ export default function Dashboard() {
                     <button
                       style={{
                         position: 'absolute',
-                        left: '52.5%',
-                        top: '66.5%',
+                        left: '53.957%',
+                        top: '68.560%',
                         width: '44px',
                         height: '44px',
                         transform: 'translate(-50%, -50%)',
@@ -1160,7 +1160,7 @@ export default function Dashboard() {
 
             <div className="rectoria-controls">
               {/* Floor Toggle */}
-              <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+              <div className="rectoria-floor-toggle">
                 <button
                   style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: selectedFloor === 'PB' ? '#E25E24' : 'transparent', color: selectedFloor === 'PB' ? '#fff' : '#6b7280', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
                   onClick={() => setSelectedFloor('PB')}
@@ -1172,7 +1172,7 @@ export default function Dashboard() {
               </div>
 
               <button
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: markerMode ? '#E25E24' : '#f8fafc', color: markerMode ? 'white' : '#003056', border: '1px solid #e2e8f0', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                className={`rectoria-action-btn ${markerMode ? 'active' : ''}`}
                 onClick={() => setMarkerMode(!markerMode)}
               >
                 {markerMode ? <X size={16} /> : <Plus size={16} />}
@@ -1180,7 +1180,7 @@ export default function Dashboard() {
               </button>
 
               <button
-                style={{ background: '#f3f4f6', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                className="rectoria-close-btn"
                 onClick={() => { setCurrentBuilding(null); setMarkerMode(false); }}
               >
                 <X size={20} color="#6b7280" />
@@ -1230,7 +1230,7 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                    <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'inline-block' }}>
+                    <div className="rectoria-map-container">
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <img
                           src={selectedFloor === 'PB' ? rectoriaPB : rectoriaN1}
@@ -1285,7 +1285,7 @@ export default function Dashboard() {
                 {selectedPin.category ? selectedPin.category.toUpperCase() : 'SIN CATEGORÍA'}
               </span>
               {selectedPin.owner && (
-                <span style={{ fontSize: '13px', color: '#003056', fontWeight: '600' }}>
+                <span className="sheet-owner-text">
                   De: {selectedPin.owner}
                 </span>
               )}
@@ -1304,18 +1304,18 @@ export default function Dashboard() {
           </div>
 
           {selectedPin.has_schedule && (
-            <div style={{ display: 'flex', gap: '12px', padding: '12px 16px', background: '#f8fafc', borderRadius: '12px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+            <div className="sheet-schedule-box">
               <div style={{ flex: 1 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>
                   <Clock size={12} /> HORARIO
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
+                <span className="schedule-value">
                   {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
                 </span>
               </div>
               <div style={{ flex: 1 }}>
                 <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
+                <span className="schedule-value">
                   {Array.isArray(selectedPin.available_days)
                     ? selectedPin.available_days.join(', ')
                     : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
