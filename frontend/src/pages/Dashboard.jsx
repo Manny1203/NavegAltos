@@ -1198,7 +1198,7 @@ export default function Dashboard() {
                   {/* Calculated Route SVG */}
                   {currentRoute && !routeEditMode && targetPin && (
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9 }}>
-                      {/* Glowing outer stroke for light mode visibility */}
+                      {/* Borde exterior suave (Google Maps style) */}
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
@@ -1206,11 +1206,14 @@ export default function Dashboard() {
                           `${targetPin.x_coordinate},${targetPin.y_coordinate}`
                         ].join(' ')}
                         fill="none"
-                        stroke="rgba(14,165,233,0.3)"
-                        strokeWidth="1.8"
-                        opacity="1"
+                        stroke="#1e40af"
+                        strokeWidth="0.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity="0.9"
+                        style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))' }}
                       />
-                      {/* Dashed route line */}
+                      {/* Línea interior vibrante */}
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
@@ -1218,9 +1221,10 @@ export default function Dashboard() {
                           `${targetPin.x_coordinate},${targetPin.y_coordinate}`
                         ].join(' ')}
                         fill="none"
-                        stroke="#0ea5e9"
-                        strokeWidth="0.6"
-                        strokeDasharray="1.5 1.5"
+                        stroke="#3b82f6"
+                        strokeWidth="0.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         opacity="1"
                       />
                     </svg>
