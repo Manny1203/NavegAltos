@@ -321,7 +321,17 @@ export default function Dashboard() {
     const endPos = { x: targetPin.x_coordinate, y: targetPin.y_coordinate };
 
     const startNode = findClosestNode(startPos.x, startPos.y, campusGraph.nodes);
-    const endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
+    let endNode = null;
+    
+    // Si el pin tiene una puerta oficial asignada y ese nodo aún existe en el grafo
+    if (targetPin.entrance_node_id) {
+      endNode = campusGraph.nodes.find(n => n.id === targetPin.entrance_node_id);
+    }
+    
+    // Si no tiene puerta o el nodo fue borrado, fallback a buscar el más cercano geográficamente
+    if (!endNode) {
+      endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
+    }
 
     if (startNode && endNode) {
       const pathIds = findShortestPath(campusGraph.nodes, campusGraph.edges, startNode.id, endNode.id);
@@ -622,6 +632,29 @@ export default function Dashboard() {
             <Trash2 size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
             Borrar
           </button>
+          {selectedNodeId && (
+            <select 
+              style={{ background: '#f59e0b', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', outline: 'none', border: 'none', cursor: 'pointer' }}
+              onChange={async (e) => {
+                const pinId = e.target.value;
+                if (!pinId) return;
+                try {
+                  const { error } = await supabase.from('pins').update({ entrance_node_id: selectedNodeId }).eq('id', pinId);
+                  if (error) throw error;
+                  alert('🚪 ¡Éxito! Este nodo ahora es la puerta oficial de ese edificio.');
+                  fetchPins(); // Recargar para que se pinte naranja
+                } catch(err) {
+                  alert('Error al vincular: ' + err.message);
+                }
+                e.target.value = ""; 
+              }}
+            >
+              <option value="">+ Vincular puerta a un pin...</option>
+              {userPins.map(pin => (
+                <option key={pin.id} value={pin.id}>{pin.name || pin.category}</option>
+              ))}
+            </select>
+          )}
           <button style={{ background: '#f3f4f6', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setSelectedNodeId(null)}>
             Deseleccionar
           </button>
@@ -1160,18 +1193,20 @@ export default function Dashboard() {
                       </svg>
                     );
                   })}
-                  {routeEditMode && graphNodes.map(node => (
+                  {routeEditMode && graphNodes.map(node => {
+                    const isDoor = userPins.some(p => p.entrance_node_id === node.id);
+                    return (
                     <div
                       key={node.id}
                       style={{
                         position: 'absolute',
                         left: `${node.x}%`,
                         top: `${node.y}%`,
-                        width: '10px',
-                        height: '10px',
-                        backgroundColor: selectedNodeId === node.id ? '#10b981' : '#3b82f6',
+                        width: isDoor ? '14px' : '10px',
+                        height: isDoor ? '14px' : '10px',
+                        backgroundColor: selectedNodeId === node.id ? '#10b981' : (isDoor ? '#f59e0b' : '#3b82f6'),
                         border: '2px solid white',
-                        borderRadius: '50%',
+                        borderRadius: isDoor ? '4px' : '50%',
                         transform: 'translate(-50%, -50%)',
                         zIndex: 12,
                         cursor: 'pointer',
@@ -1200,7 +1235,7 @@ export default function Dashboard() {
                         }
                       }}
                     />
-                  ))}
+                  )})}
 
                   {/* Calculated Route SVG */}
                   {currentRoute && !routeEditMode && targetPin && (
@@ -1209,8 +1244,7 @@ export default function Dashboard() {
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
-                          ...currentRoute.map(n => `${n.x},${n.y}`),
-                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                          ...currentRoute.map(n => `${n.x},${n.y}`)
                         ].join(' ')}
                         fill="none"
                         stroke="#1e40af"
@@ -1224,8 +1258,7 @@ export default function Dashboard() {
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
-                          ...currentRoute.map(n => `${n.x},${n.y}`),
-                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                          ...currentRoute.map(n => `${n.x},${n.y}`)
                         ].join(' ')}
                         fill="none"
                         stroke="#3b82f6"
