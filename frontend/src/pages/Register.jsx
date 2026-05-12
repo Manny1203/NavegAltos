@@ -52,6 +52,21 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Error al conectar con Google.');
+    }
+  };
+
   return (
     <>
       <div className="auth-container">
@@ -113,6 +128,22 @@ export default function RegisterPage() {
             {isLoading ? "Registrando..." : "Registrarse"}
           </button>
         </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+          <hr style={{ flex: 1, borderColor: '#e5e7eb', borderTop: '1px' }} />
+          <span style={{ padding: '0 10px', color: '#6b7280', fontSize: '12px', fontWeight: 'bold' }}>O</span>
+          <hr style={{ flex: 1, borderColor: '#e5e7eb', borderTop: '1px' }} />
+        </div>
+
+        <button 
+          type="button" 
+          onClick={handleGoogleLogin}
+          className="auth-button"
+          style={{ background: 'white', color: '#374151', border: '1px solid #d1d5db', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '18px', height: '18px' }} />
+          Continuar con Google
+        </button>
 
         <div className="auth-footer">
           ¿Ya tienes cuenta? <Link to="/login" className="auth-link">Inicia sesión</Link>
