@@ -5,8 +5,9 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User
 } from 'lucide-react';
+import UserProfile from '../components/UserProfile';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
 import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
@@ -78,6 +79,7 @@ export default function Dashboard() {
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
   const [showIconCustomizer, setShowIconCustomizer] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   
   const [userLocationIcon, setUserLocationIcon] = useState(() => {
     return localStorage.getItem('user-location-icon') || 'default';
@@ -593,26 +595,23 @@ export default function Dashboard() {
                 </div>
               </button>
 
-              {/* Dark Mode Toggle */}
+              {/* Mi Perfil */}
               <button
                 className="menu-sidebar-item"
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
                 style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
               >
-                {darkMode ? <Sun size={20} color="#f59e0b" /> : <Moon size={20} color="#6b7280" />}
+                <User size={20} color="#3b82f6" />
                 <div className="menu-item-text">
-                  <span className="menu-item-label">
-                    {darkMode ? 'Modo Claro' : 'Modo Oscuro'}
-                    <span style={{ fontSize: '10px', background: '#E25E24', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontWeight: 'bold' }}>BETA</span>
-                  </span>
-                  <span className="menu-item-desc">Cambiar tema visual</span>
+                  <span className="menu-item-label">Mi Perfil</span>
+                  <span className="menu-item-desc">Foto, tema, NIP y más</span>
                 </div>
               </button>
 
               <button
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
-                style={{ color: '#cf1010', marginTop: 'auto' }}
+                style={{ color: '#cf1010', marginTop: '0' }}
               >
                 <LogOut size={20} />
                 <div className="menu-item-text">
@@ -952,8 +951,19 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* User Profile Panel */}
+      {showProfile && (
+        <UserProfile
+          onClose={() => setShowProfile(false)}
+          onLogout={handleLogout}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+      )}
+
       {/* Icon Customizer Modal */}
       {showIconCustomizer && (
+
         <div className="action-modal-overlay" style={{ zIndex: 1100 }}>
           <div className="action-modal" style={{ maxWidth: '400px' }}>
             <button className="btn-close" onClick={() => setShowIconCustomizer(false)}>
