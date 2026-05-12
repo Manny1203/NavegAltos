@@ -33,15 +33,21 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    const lockoutUntil = localStorage.getItem('lockout_until');
+    if (lockoutUntil && Date.now() < parseInt(lockoutUntil)) {
+      const remainingMinutes = Math.ceil((parseInt(lockoutUntil) - Date.now()) / 60000);
+      setErrorMsg(`Cuenta bloqueada temporalmente por seguridad. Intenta en ${remainingMinutes} minuto(s).`);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
 
     try {
-      // Acepta: @alumnos.udg.mx, @academicos.udg.mx, @administracion.udg.mx, @udg.mx
       const validEmailRegex = /^[a-zA-Z0-9._-]+@(alumnos\.|academicos\.|administracion\.)?udg\.mx$/;
-
       if (!validEmailRegex.test(email)) {
-        setErrorMsg('Usa tu correo institucional UDG (ej. nombre.apellido1234@alumnos.udg.mx)');
+        setErrorMsg('Usa tu correo institucional UDG (ej. nombre.apellido@alumnos.udg.mx)');
         setIsLoading(false);
         return;
       }
@@ -53,12 +59,34 @@ export default function LoginPage() {
 
       if (error) throw error;
       
-      // Simplemente navegamos al home o dashboard por ahora (no creado aun, redirigimos a una ruta dummy)
+      // Reset attempts on successful login
+      localStorage.removeItem('login_attempts');
+      localStorage.removeItem('lockout_until');
+      
       navigate('/dashboard'); 
       
     } catch (error) {
-      setErrorMsg('Credenciales inválidas o error de red.');
       console.error(error);
+      
+      let attempts = parseInt(localStorage.getItem('login_attempts') || '0') + 1;
+      localStorage.setItem('login_attempts', attempts);
+      
+      let baseError = "Credenciales incorrectas o error de red.";
+      if (error.message.includes("Invalid login credentials")) {
+        baseError = "El correo institucional o el NIP no coinciden.";
+      } else if (error.message.includes("Email not confirmed")) {
+        baseError = "Debes confirmar tu correo antes de iniciar sesión.";
+      } else {
+        baseError = error.message;
+      }
+      
+      if (attempts >= 3) {
+        localStorage.setItem('lockout_until', Date.now() + 3 * 60000); // 3 minutes lockout
+        setErrorMsg('Demasiados intentos fallidos. Por seguridad, la cuenta ha sido bloqueada por 3 minutos.');
+      } else {
+        const remaining = 3 - attempts;
+        setErrorMsg(`${baseError} Te quedan ${remaining} intento(s) antes de bloquearse.`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +152,12 @@ export default function LoginPage() {
             {isLoading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
+
+        <div style={{ width: '100%', textAlign: 'right', marginTop: '10px' }}>
+          <Link to="/forgot-password" style={{ fontSize: '13px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>
+            ¿Olvidaste tu NIP?
+          </Link>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
           <hr style={{ flex: 1, borderColor: '#e5e7eb', borderTop: '1px' }} />
