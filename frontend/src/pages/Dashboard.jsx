@@ -352,14 +352,21 @@ export default function Dashboard() {
   // Arrival Check Effect
   useEffect(() => {
     if (isTraveling && destinationPin && userLocation) {
-      // routeDistance is updated continuously based on userLocation.
-      if (routeDistance > 0 && routeDistance < 15) {
+      // Use direct line distance for arrival check to avoid node snapping issues
+      const distMap = Math.hypot(userLocation.x - destinationPin.x_coordinate, userLocation.y - destinationPin.y_coordinate);
+      const directDistanceMeters = mapDistanceToMeters(distMap);
+
+      // TODO: Pruebas de campo requeridas.
+      // 25 metros puede ser mucho en teoría, pero debido a la imprecisión
+      // típica del GPS en dispositivos móviles (10-20m) puede ser necesario.
+      // Ajustar después de pruebas físicas.
+      if (directDistanceMeters < 25) { // 25 meters arrival radius
         alert("¡Has llegado a tu destino!");
         setIsTraveling(false);
         setDestinationPin(null);
       }
     }
-  }, [routeDistance, isTraveling, destinationPin, userLocation]);
+  }, [userLocation, isTraveling, destinationPin]);
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -1456,16 +1463,16 @@ export default function Dashboard() {
           {selectedPin.has_schedule && (
             <div className="sheet-schedule-box">
               <div style={{ flex: 1 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>
-                  <Clock size={12} /> HORARIO
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                  <Clock size={14} /> HORARIO
                 </span>
-                <span className="schedule-value">
+                <span className="schedule-value" style={{ display: 'block', fontSize: '14px' }}>
                   {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
                 </span>
               </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
-                <span className="schedule-value">
+              <div style={{ flex: 1, paddingLeft: '8px' }}>
+                <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>DÍAS</span>
+                <span className="schedule-value" style={{ display: 'block', fontSize: '14px', lineHeight: '1.4' }}>
                   {Array.isArray(selectedPin.available_days)
                     ? selectedPin.available_days.join(', ')
                     : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
