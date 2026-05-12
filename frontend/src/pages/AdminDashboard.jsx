@@ -75,31 +75,15 @@ export default function AdminDashboard() {
 
   // Checking Auth
   useEffect(() => {
-    checkAdminAccess();
+    initializeDashboard();
   }, []);
 
-  const checkAdminAccess = async () => {
+  const initializeDashboard = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/login');
-      return;
+    if (session) {
+      setCurrentUser(session.user);
+      loadData();
     }
-
-    // Check if user is in admin_users table
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (error || !data) {
-      alert('Acceso Denegado. No tienes permisos de administrador.');
-      navigate('/dashboard');
-      return;
-    }
-
-    setCurrentUser(session.user);
-    loadData();
   };
 
   const loadData = async () => {
