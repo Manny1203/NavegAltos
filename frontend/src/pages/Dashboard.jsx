@@ -5,7 +5,7 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
 import mapImage from '../assets/mapaUniversidadVector.svg';
@@ -94,6 +94,10 @@ export default function Dashboard() {
   const [publicPinData, setPublicPinData] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportPinData, setReportPinData] = useState(null);
+
+  // Shared pin state
+  const [showSharedPinModal, setShowSharedPinModal] = useState(false);
+  const [sharedPinData, setSharedPinData] = useState(null);
 
   // Make Public Form State
   const [hasSchedule, setHasSchedule] = useState(false);
@@ -280,6 +284,46 @@ export default function Dashboard() {
     fetchUser();
     fetchCampusGraph();
   }, [activeFilter, visibilityFilter, currentUser?.id]);
+
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const publicPinId = params.get('pin');
+      const sharedPinId = params.get('shared');
+
+      if (publicPinId) {
+        const { data } = await supabase.from('pins').select('*').eq('id', publicPinId).eq('is_public', true).maybeSingle();
+        if (data) {
+          setSelectedPin(data);
+          if (data.map_id && data.map_id !== 'main') {
+            setCurrentBuilding(data.map_id);
+            setSelectedFloor(data.floor || 'PB');
+          }
+        }
+      } else if (sharedPinId) {
+        const { data } = await supabase.from('shared_pins').select('*').eq('id', sharedPinId).maybeSingle();
+        if (data) {
+          const createdDate = new Date(data.created_at);
+          const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24)); 
+          
+          if (diffDays > 7) {
+            alert('Este enlace compartido ha caducado (tiene más de 7 días).');
+          } else {
+            setSharedPinData(data.pin_data);
+            setShowSharedPinModal(true);
+          }
+        } else {
+          alert('El pin compartido no existe o el enlace es incorrecto.');
+        }
+      }
+      
+      if (publicPinId || sharedPinId) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+    
+    checkUrlParams();
+  }, []);
 
   const fetchCampusGraph = async () => {
     try {
@@ -488,6 +532,43 @@ export default function Dashboard() {
       case 'utensils': return <Utensils color={color} />;
       case 'help-circle': return <HelpCircle color={color} />;
       default: return <MapPin color={color} />;
+    }
+  };
+
+  const handleSharePin = async (pin) => {
+    try {
+      const baseUrl = window.location.origin;
+      let shareUrl = '';
+
+      if (pin.is_public) {
+        shareUrl = `${baseUrl}/dashboard?pin=${pin.id}`;
+      } else {
+        if (!currentUser) {
+          alert('Debes iniciar sesión para compartir pines privados.');
+          return;
+        }
+        const { data, error } = await supabase.from('shared_pins').insert([{
+          shared_by: currentUser.id,
+          pin_data: pin
+        }]).select().single();
+
+        if (error) throw error;
+        shareUrl = `${baseUrl}/dashboard?shared=${data.id}`;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: `Ubicación en NavegAltos: ${pin.name}`,
+          text: `Mira esta ubicación en NavegAltos: ${pin.name}`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('¡Enlace copiado al portapapeles!');
+      }
+    } catch (err) {
+      console.error('Error compartiendo pin:', err);
+      alert('Hubo un error al compartir el pin.');
     }
   };
 
@@ -1478,6 +1559,22 @@ export default function Dashboard() {
             </span>
           </button>
 
+          {/* Share Button (Top Right) */}
+          <button 
+            style={{ 
+              position: 'absolute', top: '16px', right: '56px', 
+              background: '#3b82f6', color: 'white', 
+              width: '30px', height: '30px', borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              border: 'none', cursor: 'pointer',
+              boxShadow: '0 2px 5px rgba(59, 130, 246, 0.4)'
+            }} 
+            onClick={() => handleSharePin(selectedPin)}
+            title="Compartir Pin"
+          >
+            <Share2 size={14} />
+          </button>
+
           <div className="sheet-header">
             <h3>{selectedPin.name}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
@@ -1787,6 +1884,67 @@ export default function Dashboard() {
             }}>
               <AlertTriangle size={16} /> Enviar Reporte
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* SHARED PIN RECEPTION MODAL */}
+      {showSharedPinModal && sharedPinData && (
+        <div className="action-modal-overlay">
+          <div className="action-modal">
+            <button className="btn-close" onClick={() => { setShowSharedPinModal(false); setSharedPinData(null); }}>
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+            </button>
+            <div className="action-modal-header">
+              <Share2 size={20} color="#3b82f6" />
+              <h3>Pin Compartido</h3>
+            </div>
+            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+              Alguien te ha compartido el pin privado: <strong>{sharedPinData.name}</strong>.
+              <br/><br/>¿Qué deseas hacer con él?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn-primary-large" style={{ width: '100%', background: '#10b981' }} onClick={async () => {
+                if (!currentUser) {
+                  alert('Debes iniciar sesión para guardar el pin en tu cuenta.');
+                  return;
+                }
+                const newPin = {
+                  ...sharedPinData,
+                  id: undefined,
+                  user_id: currentUser.id,
+                  is_public: false
+                };
+                const { error } = await supabase.from('pins').insert([newPin]);
+                if (error) {
+                  alert('Error al guardar el pin.');
+                } else {
+                  alert('¡Pin guardado en tu cuenta exitosamente!');
+                  fetchPins();
+                  setShowSharedPinModal(false);
+                  setSharedPinData(null);
+                }
+              }}>
+                Guardar en Mis Pines
+              </button>
+              
+              <button className="btn-primary-large" style={{ width: '100%' }} onClick={() => {
+                const tempPin = { ...sharedPinData, id: 'temp-' + Date.now() };
+                if (tempPin.map_id && tempPin.map_id !== 'main') {
+                  setCurrentBuilding(tempPin.map_id);
+                  setSelectedFloor(tempPin.floor || 'PB');
+                }
+                setGpsEnabled(true);
+                setDestinationPin(tempPin);
+                setIsTraveling(true);
+                setShowSharedPinModal(false);
+                setSharedPinData(null);
+              }}>
+                <Route size={16} /> Solo Iniciar Viaje
+              </button>
+            </div>
           </div>
         </div>
       )}

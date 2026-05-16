@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, LogIn, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [nip, setNip] = useState('');
 
@@ -63,7 +64,8 @@ export default function LoginPage() {
       localStorage.removeItem('login_attempts');
       localStorage.removeItem('lockout_until');
       
-      navigate('/dashboard'); 
+      const searchParams = location.state?.search || '';
+      navigate(`/dashboard${searchParams}`); 
       
     } catch (error) {
       console.error(error);
@@ -97,7 +99,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}/dashboard${location.state?.search || ''}`
         }
       });
       if (error) throw error;
