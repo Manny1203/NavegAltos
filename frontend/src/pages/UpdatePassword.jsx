@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 export default function UpdatePassword() {
   const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
 
@@ -24,6 +26,10 @@ export default function UpdatePassword() {
     e.preventDefault();
     if (newPassword.length < 6) {
       setMsg({ text: 'El NIP debe tener al menos 6 caracteres.', type: 'error' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMsg({ text: 'Los NIPs no coinciden.', type: 'error' });
       return;
     }
 
@@ -62,14 +68,31 @@ export default function UpdatePassword() {
 
         {msg.type !== 'error' || msg.text === 'El NIP debe tener al menos 6 caracteres.' || msg.text === 'Hubo un error al actualizar el NIP.' ? (
           <form className="auth-form" onSubmit={handleUpdate}>
-            <div className="input-group">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <label style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={showPassword} onChange={() => setShowPassword(!showPassword)} />
+                Mostrar NIP
+              </label>
+            </div>
+            <div className="input-group" style={{ marginBottom: '16px' }}>
               <Lock className="input-icon" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="auth-input"
                 placeholder="Ingresa tu nuevo NIP"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <Lock className="input-icon" />
+              <input
+                type={showPassword ? "text" : "password"}
+                className="auth-input"
+                placeholder="Confirmar NIP"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>

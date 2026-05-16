@@ -12,6 +12,8 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
 
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [pwdMsg, setPwdMsg] = useState('');
 
   // Delete account flow: 'idle' → 'confirm' → 'typing'
@@ -84,7 +86,8 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
       setSaveMsg('¡Foto actualizada!');
       setTimeout(() => setSaveMsg(''), 2500);
     } catch (err) {
-      setSaveMsg('Error al subir la foto.');
+      console.error('Error al subir foto:', err);
+      setSaveMsg(`Error: ${err.message || 'Desconocido'}`);
     } finally {
       setUploading(false);
     }
@@ -101,9 +104,10 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
 
   const handleChangePwd = async () => {
     if (newPwd.length < 6) { setPwdMsg('El NIP debe tener al menos 6 caracteres.'); return; }
+    if (newPwd !== confirmPwd) { setPwdMsg('Los NIPs no coinciden.'); return; }
     const { error } = await supabase.auth.updateUser({ password: newPwd });
     if (error) setPwdMsg('Error: ' + error.message);
-    else { setPwdMsg('¡NIP actualizado exitosamente!'); setNewPwd(''); setTimeout(() => setPwdMsg(''), 3000); }
+    else { setPwdMsg('¡NIP actualizado exitosamente!'); setNewPwd(''); setConfirmPwd(''); setShowChangePwd(false); setTimeout(() => setPwdMsg(''), 3000); }
   };
 
   const handleDeleteAccount = async () => {
@@ -231,15 +235,25 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
             </button>
             {showChangePwd && (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: -4 }}>
+                  <label style={{ fontSize: 12, color: textSub, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={showPwd} onChange={() => setShowPwd(!showPwd)} />
+                    Mostrar NIP
+                  </label>
+                </div>
+                <input type={showPwd ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)}
                   placeholder="Nuevo NIP (mín. 6 caracteres)"
+                  style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${border}`, fontSize: 14, background: inputBg, color: text, outline: 'none' }}
+                />
+                <input type={showPwd ? "text" : "password"} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+                  placeholder="Confirmar NIP"
                   style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${border}`, fontSize: 14, background: inputBg, color: text, outline: 'none' }}
                 />
                 <button onClick={handleChangePwd}
                   style={{ background: '#003056', color: 'white', borderRadius: 10, padding: '11px', fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none' }}>
                   Guardar nuevo NIP
                 </button>
-                {pwdMsg && <p style={{ fontSize: 12, color: pwdMsg.includes('Error') ? '#ef4444' : '#10b981', fontWeight: 600 }}>{pwdMsg}</p>}
+                {pwdMsg && <p style={{ fontSize: 12, color: pwdMsg.includes('Error') || pwdMsg.includes('coinciden') || pwdMsg.includes('caracteres') ? '#ef4444' : '#10b981', fontWeight: 600 }}>{pwdMsg}</p>}
               </div>
             )}
           </div>
