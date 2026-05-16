@@ -1561,14 +1561,7 @@ export default function Dashboard() {
 
           {/* Share Button (Top Right) */}
           <button 
-            style={{ 
-              position: 'absolute', top: '16px', right: '56px', 
-              background: '#3b82f6', color: 'white', 
-              width: '30px', height: '30px', borderRadius: '50%', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              border: 'none', cursor: 'pointer',
-              boxShadow: '0 2px 5px rgba(59, 130, 246, 0.4)'
-            }} 
+            className="share-sheet-btn"
             onClick={() => handleSharePin(selectedPin)}
             title="Compartir Pin"
           >
@@ -1906,7 +1899,7 @@ export default function Dashboard() {
               <br/><br/>¿Qué deseas hacer con él?
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button className="btn-primary-large" style={{ width: '100%', background: '#10b981' }} onClick={async () => {
+              <button className="btn-modal-submit btn-success-submit" onClick={async () => {
                 if (!currentUser) {
                   alert('Debes iniciar sesión para guardar el pin en tu cuenta.');
                   return;
@@ -1931,7 +1924,7 @@ export default function Dashboard() {
                 Guardar en Mis Pines
               </button>
               
-              <button className="btn-primary-large" style={{ width: '100%' }} onClick={() => {
+              <button className="btn-modal-submit" style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0ea5e9' }} onClick={() => {
                 const tempPin = { ...sharedPinData, id: 'temp-' + Date.now() };
                 if (tempPin.map_id && tempPin.map_id !== 'main') {
                   setCurrentBuilding(tempPin.map_id);

@@ -114,9 +114,9 @@ export default function LoginPage() {
       <div className="auth-container">
         {/* Usamos una imagen genérica mientras el usuario nos pasa su logo, o texto con estilos si prefiere */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h1 style={{ color: '#003056', fontSize: '28px', fontWeight: '800', lineHeight:'1.1' }}>
+          <h1 style={{ color: 'var(--text-heading)', fontSize: '28px', fontWeight: '800', lineHeight:'1.1' }}>
             NavegAltos<br/>
-            <span style={{ fontSize: '12px', fontWeight: '400', color: '#6b7280' }}>
+            <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-muted)' }}>
               Centro Universitario de los Altos
             </span>
           </h1>
@@ -155,23 +155,23 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={{ width: '100%', textAlign: 'right', marginTop: '10px' }}>
-          <Link to="/forgot-password" style={{ fontSize: '13px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>
+        <div style={{ width: '100%', textAlign: 'right', margin: '10px 0 20px 0' }}>
+          <Link to="/forgot-password" style={{ fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '500' }}>
             ¿Olvidaste tu NIP?
           </Link>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
-          <hr style={{ flex: 1, borderColor: '#e5e7eb', borderTop: '1px' }} />
-          <span style={{ padding: '0 10px', color: '#6b7280', fontSize: '12px', fontWeight: 'bold' }}>O</span>
-          <hr style={{ flex: 1, borderColor: '#e5e7eb', borderTop: '1px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 20px 0' }}>
+          <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
+          <span style={{ padding: '0 10px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>O</span>
+          <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
         </div>
 
         <button 
           type="button" 
           onClick={handleGoogleLogin}
           className="auth-button"
-          style={{ background: 'white', color: '#374151', border: '1px solid #d1d5db', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+          style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border-color)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
         >
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '18px', height: '18px' }} />
           Continuar con Google
@@ -187,7 +187,7 @@ export default function LoginPage() {
               type="button" 
               onClick={handleInstallClick}
               style={{
-                background: '#003056',
+                background: 'var(--bg-main)',
                 color: 'white',
                 border: 'none',
                 padding: '12px 20px',

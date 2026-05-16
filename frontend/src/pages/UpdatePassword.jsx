@@ -69,7 +69,7 @@ export default function UpdatePassword() {
         {msg.type !== 'error' || msg.text === 'El NIP debe tener al menos 6 caracteres.' || msg.text === 'Hubo un error al actualizar el NIP.' ? (
           <form className="auth-form" onSubmit={handleUpdate}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-              <label style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <input type="checkbox" checked={showPassword} onChange={() => setShowPassword(!showPassword)} />
                 Mostrar NIP
               </label>

@@ -24,13 +24,12 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
   const fileInputRef = useRef(null);
 
   // Dark mode token helper
-  const d = darkMode;
-  const bg     = d ? '#1f2937' : '#ffffff';
-  const bgCard = d ? '#374151' : '#f9fafb';
-  const border = d ? '#4b5563' : '#e5e7eb';
-  const text   = d ? '#f9fafb' : '#111827';
-  const textSub= d ? '#9ca3af' : '#6b7280';
-  const inputBg= d ? '#374151' : '#f9fafb';
+  const bg     = 'var(--bg-main)';
+  const bgCard = 'var(--bg-card)';
+  const border = 'var(--border-color)';
+  const text   = 'var(--text-main)';
+  const textSub= 'var(--text-muted)';
+  const inputBg= 'var(--input-bg)';
 
   useEffect(() => {
     const init = async () => {
@@ -196,7 +195,7 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
                 { label: 'Aprobados', value: contributions.approved,  color: '#10b981' },
                 { label: 'Pendientes',value: contributions.pending,   color: '#f59e0b' },
               ].map(s => (
-                <div key={s.label} style={{ flex: 1, textAlign: 'center', background: d ? '#1f2937' : 'white', borderRadius: 8, padding: '10px 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+                <div key={s.label} style={{ flex: 1, textAlign: 'center', background: bgCard, borderRadius: 8, padding: '10px 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
                   <div style={{ fontSize: 10, color: textSub, fontWeight: 600 }}>{s.label}</div>
                 </div>
@@ -267,13 +266,13 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
           {/* Delete Account — 3-step flow */}
           {deleteStep === 'idle' && (
             <button onClick={() => setDeleteStep('confirm')}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, cursor: 'pointer', border: '1px solid #fecaca', background: d ? '#450a0a' : '#fff5f5', fontWeight: 700, fontSize: 14, color: '#ef4444' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, cursor: 'pointer', border: '1px solid #fecaca', background: darkMode ? '#450a0a' : '#fff5f5', fontWeight: 700, fontSize: 14, color: '#ef4444' }}>
               <Trash2 size={16} />Eliminar Cuenta
             </button>
           )}
 
           {deleteStep === 'confirm' && (
-            <div style={{ background: d ? '#450a0a' : '#fff5f5', border: '1px solid #fca5a5', borderRadius: 12, padding: 16 }}>
+            <div style={{ background: darkMode ? '#450a0a' : '#fff5f5', border: '1px solid #fca5a5', borderRadius: 12, padding: 16 }}>
               <p style={{ fontSize: 14, color: '#dc2626', fontWeight: 700, marginBottom: 6 }}>⚠️ ¿Eliminar tu cuenta?</p>
               <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 14, lineHeight: 1.5 }}>
                 Esta acción es permanente e irreversible. Perderás todos tus datos.
@@ -292,7 +291,7 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
           )}
 
           {deleteStep === 'typing' && (
-            <div style={{ background: d ? '#450a0a' : '#fff5f5', border: '2px solid #dc2626', borderRadius: 12, padding: 16 }}>
+            <div style={{ background: darkMode ? '#450a0a' : '#fff5f5', border: '2px solid #dc2626', borderRadius: 12, padding: 16 }}>
               <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 700, marginBottom: 10 }}>
                 Escribe <strong>eliminar</strong> para confirmar:
               </p>
