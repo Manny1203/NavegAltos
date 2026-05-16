@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Lock, LogIn, Download } from 'lucide-react';
+import { User, Lock, LogIn, Download, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showNip, setShowNip] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   useEffect(() => {
@@ -137,16 +138,30 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" />
             <input
-              type="password"
+              type={showNip ? 'text' : 'password'}
               className="auth-input"
               placeholder="NIP"
               value={nip}
               onChange={(e) => setNip(e.target.value)}
               required
+              style={{ paddingRight: '44px' }}
             />
+            <button
+              type="button"
+              onClick={() => setShowNip(!showNip)}
+              style={{
+                position: 'absolute', right: '12px', top: '50%',
+                transform: 'translateY(-50%)', background: 'none',
+                border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', padding: 0
+              }}
+              tabIndex={-1}
+            >
+              {showNip ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>
@@ -155,13 +170,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={{ width: '100%', textAlign: 'right', margin: '10px 0 20px 0' }}>
+        <div style={{ width: '100%', textAlign: 'right', margin: '8px 0 14px 0' }}>
           <Link to="/forgot-password" style={{ fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '500' }}>
             ¿Olvidaste tu NIP?
           </Link>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 20px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 14px 0' }}>
           <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
           <span style={{ padding: '0 10px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>O</span>
           <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
@@ -182,12 +197,12 @@ export default function LoginPage() {
         </div>
 
         {deferredPrompt && (
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <div style={{ marginTop: '16px' }}>
             <button 
               type="button" 
               onClick={handleInstallClick}
               style={{
-                background: 'var(--bg-main)',
+                background: '#003056',
                 color: 'white',
                 border: 'none',
                 padding: '12px 20px',

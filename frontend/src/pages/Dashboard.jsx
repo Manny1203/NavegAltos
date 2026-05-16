@@ -421,7 +421,7 @@ export default function Dashboard() {
       // típica del GPS en dispositivos móviles (10-20m) puede ser necesario.
       // Ajustar después de pruebas físicas.
       if (directDistanceMeters < 25) { // 25 meters arrival radius
-        toast.success('¡Has llegado a tu destino! 🎉');
+        toast.success('Has llegado a tu destino.');
         setIsTraveling(false);
         setDestinationPin(null);
       }
@@ -568,7 +568,7 @@ export default function Dashboard() {
         });
       } else {
         await navigator.clipboard.writeText(shareUrl);
-        toast.success('¡Enlace copiado al portapapeles! 🔗');
+        toast.success('Enlace copiado al portapapeles.');
       }
     } catch (err) {
       console.error('Error compartiendo pin:', err);
@@ -725,7 +725,7 @@ export default function Dashboard() {
                 try {
                   const { error } = await supabase.from('pins').update({ entrance_node_id: selectedNodeId }).eq('id', pinId);
                   if (error) throw error;
-                  toast.success('🚪 ¡Éxito! Este nodo ahora es la puerta oficial de ese edificio.');
+                  toast.success('Exito. Este nodo ahora es la puerta oficial de ese edificio.');
                   fetchPins();
                 } catch(err) {
                   toast.error('Error al vincular: ' + err.message);
@@ -781,7 +781,7 @@ export default function Dashboard() {
                downloadAnchorNode.click();
                downloadAnchorNode.remove();
                
-               toast.success('Grafo guardado en la Nube y aplicado en vivo. ✅');
+               toast.success('Grafo guardado en la Nube y aplicado en vivo.');
              } catch (err) {
                console.error('Error guardando en Supabase:', err);
                toast.error('Error al guardar en la nube. Revisa consola.');
@@ -1811,7 +1811,7 @@ export default function Dashboard() {
 
                 if (error) throw error;
 
-                toast.success('Solicitud enviada a revisión. ¡En breve revisamos tu pin! ✅');
+                toast.success('Solicitud enviada a revision. En breve revisamos tu pin.');
                 setShowMakePublicModal(false);
                 setOwnerName('');
                 setPinDescription('');
@@ -1865,7 +1865,7 @@ export default function Dashboard() {
                   status: 'pending'
                 }]);
                 if (error) throw error;
-                toast.success('Reporte enviado. ¡Gracias por tu ayuda! 🙏');
+                toast.success('Reporte enviado. Gracias por tu ayuda.');
                 setShowReportModal(false);
                 setReportReason('');
               } catch (e) {
@@ -1913,7 +1913,7 @@ export default function Dashboard() {
                   toast.error('Error al guardar el pin: ' + error.message);
                   console.error('Error insertando pin clonado:', error);
                 } else {
-                  toast.success('¡Pin guardado en tu cuenta exitosamente! 📍');
+                  toast.success('Pin guardado en tu cuenta exitosamente.');
                   fetchPins();
                   setShowSharedPinModal(false);
                   setSharedPinData(null);

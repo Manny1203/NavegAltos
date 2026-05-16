@@ -155,7 +155,7 @@ export default function AdminDashboard() {
       const { error: reqError } = await supabase.from('pin_requests').update({ status: 'approved' }).eq('id', request.id);
       if (reqError) throw reqError;
 
-      toast.success('¡Pin aprobado! Ya es visible al público. ✅');
+      toast.success('Pin aprobado. Ya es visible al publico.');
       loadData();
     } catch (e) {
       console.error("Detalles del error al aprobar:", e);
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         .eq('id', movingPin.id);
 
       if (error) throw error;
-      toast.success('Pin movido exitosamente. 📍');
+      toast.success('Pin movido exitosamente.');
       setIsZenMode(false);
       setMovingPin(null);
       loadData();
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      toast.success('Solicitud actualizada correctamente. ✅');
+      toast.success('Solicitud actualizada correctamente.');
       setEditingRequest(null);
       loadData();
     } catch (e) {
@@ -338,7 +338,7 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      toast.success('Pin actualizado correctamente. ✅');
+      toast.success('Pin actualizado correctamente.');
       setEditingPin(null);
       loadData();
     } catch (e) {
@@ -360,7 +360,7 @@ export default function AdminDashboard() {
         return;
       }
       console.log('Reporte resuelto:', data);
-      toast.success('Reporte marcado como resuelto. ✅');
+      toast.success('Reporte marcado como resuelto.');
       loadData();
     } catch (e) {
       console.error('Error inesperado al resolver reporte:', e);
