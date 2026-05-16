@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Menu, X, MapPin, Users, AlertTriangle, Flag, Globe, FileText,
@@ -154,12 +155,11 @@ export default function AdminDashboard() {
       const { error: reqError } = await supabase.from('pin_requests').update({ status: 'approved' }).eq('id', request.id);
       if (reqError) throw reqError;
 
-      alert('¡Pin aprobado exitosamente! Ahora es público.');
-      // Reload
+      toast.success('¡Pin aprobado! Ya es visible al público. ✅');
       loadData();
     } catch (e) {
       console.error("Detalles del error al aprobar:", e);
-      alert('Error aprobando. Revisa la base de datos o consola.');
+      toast.error('Error aprobando. Revisa la base de datos o consola.');
     }
   };
 
@@ -168,11 +168,11 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('pin_requests').update({ status: 'rejected' }).eq('id', request.id);
       if (error) throw error;
 
-      alert('Solicitud rechazada. El pin se mantendrá privado.');
+      toast.success('Solicitud rechazada. El pin sigue siendo privado.');
       loadData();
     } catch (e) {
       console.error(e);
-      alert('Error rechazando.');
+      toast.error('Error al rechazar.');
     }
   };
 
@@ -213,14 +213,13 @@ export default function AdminDashboard() {
 
   const handleDeletePin = async (pinId) => {
     try {
-      if (!window.confirm("¿Seguro que quieres eliminar este pin público?")) return;
-
       const { error } = await supabase.from('pins').delete().eq('id', pinId);
       if (error) throw error;
+      toast.success('Pin eliminado correctamente.');
       loadData();
     } catch (e) {
       console.error(e);
-      alert('Error borrando pin.');
+      toast.error('Error borrando pin.');
     }
   };
 
@@ -259,7 +258,7 @@ export default function AdminDashboard() {
     }
 
     if (collision) {
-      alert('Esta ubicación está muy cerca de otro pin. Selecciona un lugar más despejado.');
+      toast.error('Esta ubicación está muy cerca de otro pin. Selecciona un lugar más despejado.');
       return;
     }
 
@@ -270,13 +269,13 @@ export default function AdminDashboard() {
         .eq('id', movingPin.id);
 
       if (error) throw error;
-      alert('Pin movido exitosamente.');
+      toast.success('Pin movido exitosamente. 📍');
       setIsZenMode(false);
       setMovingPin(null);
       loadData();
     } catch (err) {
       console.error(err);
-      alert('Error moviendo pin: ' + (err.message || JSON.stringify(err)));
+      toast.error('Error moviendo pin: ' + (err.message || JSON.stringify(err)));
     }
   };
 
@@ -301,19 +300,19 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      alert('Solicitud actualizada correctamente.');
+      toast.success('Solicitud actualizada correctamente. ✅');
       setEditingRequest(null);
       loadData();
     } catch (e) {
       console.error(e);
-      alert('Error actualizando solicitud.');
+      toast.error('Error al actualizar solicitud.');
     }
   };
 
   const handleUpdatePin = async () => {
     try {
       if (!editingPin.name) {
-        alert("El pin debe tener al menos un nombre.");
+        toast.error('El pin debe tener al menos un nombre.');
         return;
       }
 
@@ -339,12 +338,12 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      alert('Pin actualizado correctamente.');
+      toast.success('Pin actualizado correctamente. ✅');
       setEditingPin(null);
       loadData();
     } catch (e) {
       console.error(e);
-      alert('Error al actualizar el pin.');
+      toast.error('Error al actualizar el pin.');
     }
   };
 
@@ -357,15 +356,15 @@ export default function AdminDashboard() {
         .select();
       if (error) {
         console.error('Error RLS/DB al resolver:', JSON.stringify(error));
-        alert('Error al resolver: ' + (error.message || JSON.stringify(error)));
+        toast.error('Error al resolver: ' + (error.message || JSON.stringify(error)));
         return;
       }
       console.log('Reporte resuelto:', data);
-      alert('Reporte marcado como resuelto.');
+      toast.success('Reporte marcado como resuelto. ✅');
       loadData();
     } catch (e) {
       console.error('Error inesperado al resolver reporte:', e);
-      alert('Error inesperado: ' + e.message);
+      toast.error('Error inesperado: ' + e.message);
     }
   };
 
@@ -378,14 +377,15 @@ export default function AdminDashboard() {
         .select();
       if (error) {
         console.error('Error RLS/DB al descartar:', JSON.stringify(error));
-        alert('Error al descartar: ' + (error.message || JSON.stringify(error)));
+        toast.error('Error al descartar: ' + (error.message || JSON.stringify(error)));
         return;
       }
       console.log('Reporte descartado:', data);
+      toast.success('Reporte descartado.');
       loadData();
     } catch (e) {
       console.error('Error inesperado al descartar reporte:', e);
-      alert('Error inesperado: ' + e.message);
+      toast.error('Error inesperado: ' + e.message);
     }
   };
 

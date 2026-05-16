@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { calculateAffineCoefficients, transformCoordinates, findShortestPath, findClosestNode, calculateDistanceMap, mapDistanceToMeters } from '../lib/geoUtils';
 import {
@@ -98,6 +99,9 @@ export default function Dashboard() {
   // Shared pin state
   const [showSharedPinModal, setShowSharedPinModal] = useState(false);
   const [sharedPinData, setSharedPinData] = useState(null);
+
+  // Confirm delete state
+  const [pinToDelete, setPinToDelete] = useState(null);
 
   // Make Public Form State
   const [hasSchedule, setHasSchedule] = useState(false);
@@ -307,13 +311,13 @@ export default function Dashboard() {
           const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24)); 
           
           if (diffDays > 7) {
-            alert('Este enlace compartido ha caducado (tiene más de 7 días).');
+            toast.error('Este enlace compartido ha caducado (tiene más de 7 días).');
           } else {
             setSharedPinData(data.pin_data);
             setShowSharedPinModal(true);
           }
         } else {
-          alert('El pin compartido no existe o el enlace es incorrecto.');
+          toast.error('El pin compartido no existe o el enlace es incorrecto.');
         }
       }
       
@@ -417,7 +421,7 @@ export default function Dashboard() {
       // típica del GPS en dispositivos móviles (10-20m) puede ser necesario.
       // Ajustar después de pruebas físicas.
       if (directDistanceMeters < 25) { // 25 meters arrival radius
-        alert("¡Has llegado a tu destino!");
+        toast.success('¡Has llegado a tu destino! 🎉');
         setIsTraveling(false);
         setDestinationPin(null);
       }
@@ -544,7 +548,7 @@ export default function Dashboard() {
         shareUrl = `${baseUrl}/dashboard?pin=${pin.id}`;
       } else {
         if (!currentUser) {
-          alert('Debes iniciar sesión para compartir pines privados.');
+          toast.error('Debes iniciar sesión para compartir pines privados.');
           return;
         }
         const { data, error } = await supabase.from('shared_pins').insert([{
@@ -564,11 +568,11 @@ export default function Dashboard() {
         });
       } else {
         await navigator.clipboard.writeText(shareUrl);
-        alert('¡Enlace copiado al portapapeles!');
+        toast.success('¡Enlace copiado al portapapeles! 🔗');
       }
     } catch (err) {
       console.error('Error compartiendo pin:', err);
-      alert('Hubo un error al compartir el pin.');
+      toast.error('Hubo un error al compartir el pin.');
     }
   };
 
@@ -721,10 +725,10 @@ export default function Dashboard() {
                 try {
                   const { error } = await supabase.from('pins').update({ entrance_node_id: selectedNodeId }).eq('id', pinId);
                   if (error) throw error;
-                  alert('🚪 ¡Éxito! Este nodo ahora es la puerta oficial de ese edificio.');
-                  fetchPins(); // Recargar para que se pinte naranja
+                  toast.success('🚪 ¡Éxito! Este nodo ahora es la puerta oficial de ese edificio.');
+                  fetchPins();
                 } catch(err) {
-                  alert('Error al vincular: ' + err.message);
+                  toast.error('Error al vincular: ' + err.message);
                 }
                 e.target.value = ""; 
               }}
@@ -749,7 +753,7 @@ export default function Dashboard() {
                     const data = JSON.parse(event.target.result);
                     setGraphNodes(data.nodes || []);
                     setGraphEdges(data.edges || []);
-                  } catch (err) { alert('Error al cargar archivo JSON'); }
+                  } catch (err) { toast.error('Error al cargar archivo JSON'); }
                 };
                 reader.readAsText(file);
               }
@@ -777,10 +781,10 @@ export default function Dashboard() {
                downloadAnchorNode.click();
                downloadAnchorNode.remove();
                
-               alert('Grafo guardado en la Nube exitosamente y aplicado en vivo.');
+               toast.success('Grafo guardado en la Nube y aplicado en vivo. ✅');
              } catch (err) {
                console.error('Error guardando en Supabase:', err);
-               alert('Error al guardar en la nube. Revisa consola.');
+               toast.error('Error al guardar en la nube. Revisa consola.');
              }
           }}>
             Guardar
@@ -856,7 +860,7 @@ export default function Dashboard() {
             }}>Cancelar</button>
             <button className="pin-action-btn btn-save" onClick={async () => {
               if (!newPinName) {
-                alert("Por favor, ponle un nombre a tu pin.");
+                toast.error('Por favor, ponle un nombre a tu pin.');
                 return;
               }
               try {
@@ -888,7 +892,7 @@ export default function Dashboard() {
                 }
               } catch (error) {
                 console.error("Error saving pin to Supabase:", error);
-                alert("Hubo un error al guardar el pin. Intenta de nuevo.");
+                toast.error('Hubo un error al guardar el pin. Intenta de nuevo.');
               } finally {
                 setShowPinModal(false);
                 setMarkerMode(false);
@@ -955,7 +959,7 @@ export default function Dashboard() {
             <button
               className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
               onClick={() => { 
-                if(gpsError && !gpsEnabled) alert(gpsError);
+                if(gpsError && !gpsEnabled) toast.error(gpsError);
                 setGpsEnabled(!gpsEnabled); 
               }}
               title="Activar GPS"
@@ -967,7 +971,7 @@ export default function Dashboard() {
               className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
               onClick={() => {
                 if (!currentUser) {
-                  alert("Debes iniciar sesión para ver tus pines privados.");
+                  toast.error('Debes iniciar sesión para ver tus pines privados.');
                   return;
                 }
                 setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
@@ -1632,13 +1636,7 @@ export default function Dashboard() {
                 }}>
                   <Globe size={14} /> Hacer Público
                 </button>
-                <button className="btn-secondary btn-danger" onClick={async () => {
-                  if (window.confirm('¿Seguro que quieres borrar este pin?')) {
-                    await supabase.from('pins').delete().eq('id', selectedPin.id);
-                    setUserPins(userPins.filter(p => p.id !== selectedPin.id));
-                    setSelectedPin(null);
-                  }
-                }}>
+                <button className="btn-secondary btn-danger" onClick={() => setPinToDelete(selectedPin)}>
                   <Trash2 size={14} /> Borrar Pin
                 </button>
               </>
@@ -1781,17 +1779,17 @@ export default function Dashboard() {
 
             <button className="btn-modal-submit btn-public-submit" onClick={async () => {
               if (!pinCategory) {
-                alert('Por favor, selecciona una categoría para el pin.');
+                toast.error('Por favor, selecciona una categoría para el pin.');
                 return;
               }
 
               if (!ownerName) {
-                alert('Por favor, indica a quién le pertenece este pin.');
+                toast.error('Por favor, indica a quién le pertenece este pin.');
                 return;
               }
 
               if (!currentUser || !publicPinData) {
-                alert('Error de sesión o pin no seleccionado.');
+                toast.error('Error de sesión o pin no seleccionado.');
                 return;
               }
 
@@ -1813,14 +1811,14 @@ export default function Dashboard() {
 
                 if (error) throw error;
 
-                alert('Solicitud enviada a revisión exitosamente.');
+                toast.success('Solicitud enviada a revisión. ¡En breve revisamos tu pin! ✅');
                 setShowMakePublicModal(false);
                 setOwnerName('');
                 setPinDescription('');
                 setHasSchedule(false);
               } catch (e) {
                 console.error("Error pidiendo pin público: ", e);
-                alert("Hubo un error al enviar la solicitud.");
+                toast.error('Hubo un error al enviar la solicitud.');
               }
             }}>
               <Globe size={16} /> Enviar Solicitud
@@ -1856,7 +1854,7 @@ export default function Dashboard() {
             </div>
             <button className="btn-modal-submit btn-report-submit" onClick={async () => {
               if (!reportReason.trim()) {
-                alert('Por favor, escribe una razón para el reporte.');
+                toast.error('Por favor, escribe una razón para el reporte.');
                 return;
               }
               try {
@@ -1867,12 +1865,12 @@ export default function Dashboard() {
                   status: 'pending'
                 }]);
                 if (error) throw error;
-                alert('Reporte enviado al administrador. ¡Gracias por tu ayuda!');
+                toast.success('Reporte enviado. ¡Gracias por tu ayuda! 🙏');
                 setShowReportModal(false);
                 setReportReason('');
               } catch (e) {
                 console.error('Error enviando reporte:', e);
-                alert('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
+                toast.error('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
               }
             }}>
               <AlertTriangle size={16} /> Enviar Reporte
@@ -1901,7 +1899,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button className="btn-modal-submit btn-success-submit" onClick={async () => {
                 if (!currentUser) {
-                  alert('Debes iniciar sesión para guardar el pin en tu cuenta.');
+                  toast.error('Debes iniciar sesión para guardar el pin en tu cuenta.');
                   return;
                 }
                 const { id, created_at, updated_at, owner, has_schedule, open_time, close_time, available_days, entrance_node_id, ...restOfPin } = sharedPinData;
@@ -1912,10 +1910,10 @@ export default function Dashboard() {
                 };
                 const { error } = await supabase.from('pins').insert([newPin]);
                 if (error) {
-                  alert('Error al guardar el pin: ' + error.message);
+                  toast.error('Error al guardar el pin: ' + error.message);
                   console.error('Error insertando pin clonado:', error);
                 } else {
-                  alert('¡Pin guardado en tu cuenta exitosamente!');
+                  toast.success('¡Pin guardado en tu cuenta exitosamente! 📍');
                   fetchPins();
                   setShowSharedPinModal(false);
                   setSharedPinData(null);
@@ -1937,6 +1935,43 @@ export default function Dashboard() {
                 setSharedPinData(null);
               }}>
                 <Route size={16} /> Solo Iniciar Viaje
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE PIN MODAL */}
+      {pinToDelete && (
+        <div className="action-modal-overlay">
+          <div className="action-modal" style={{ maxWidth: '340px' }}>
+            <div className="action-modal-header" style={{ color: '#ef4444' }}>
+              <Trash2 size={20} color="#ef4444" />
+              <h3 style={{ color: '#ef4444' }}>Borrar Pin</h3>
+            </div>
+            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+              ¿Seguro que quieres borrar <strong>{pinToDelete.name || 'este pin'}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className="btn-modal-submit"
+                style={{ flex: 1, background: 'rgba(107,114,128,0.1)', color: 'var(--text-muted)' }}
+                onClick={() => setPinToDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-modal-submit"
+                style={{ flex: 1, background: '#ef4444', color: 'white' }}
+                onClick={async () => {
+                  await supabase.from('pins').delete().eq('id', pinToDelete.id);
+                  setUserPins(prev => prev.filter(p => p.id !== pinToDelete.id));
+                  setSelectedPin(null);
+                  setPinToDelete(null);
+                  toast.success('Pin eliminado correctamente.');
+                }}
+              >
+                <Trash2 size={14} /> Sí, borrar
               </button>
             </div>
           </div>
