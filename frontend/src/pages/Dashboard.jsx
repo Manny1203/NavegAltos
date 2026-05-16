@@ -1911,15 +1911,16 @@ export default function Dashboard() {
                   alert('Debes iniciar sesión para guardar el pin en tu cuenta.');
                   return;
                 }
+                const { id, created_at, updated_at, owner, has_schedule, open_time, close_time, available_days, entrance_node_id, ...restOfPin } = sharedPinData;
                 const newPin = {
-                  ...sharedPinData,
-                  id: undefined,
+                  ...restOfPin,
                   user_id: currentUser.id,
                   is_public: false
                 };
                 const { error } = await supabase.from('pins').insert([newPin]);
                 if (error) {
-                  alert('Error al guardar el pin.');
+                  alert('Error al guardar el pin: ' + error.message);
+                  console.error('Error insertando pin clonado:', error);
                 } else {
                   alert('¡Pin guardado en tu cuenta exitosamente!');
                   fetchPins();
