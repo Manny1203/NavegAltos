@@ -436,6 +436,11 @@
     padding: 6px 12px;
     font-size: 11px;
   }
+
+  /* Hide zoom controls on mobile */
+  .zoom-controls {
+    display: none !important;
+  }
 }
 
 /* --- DARK MODE --- */

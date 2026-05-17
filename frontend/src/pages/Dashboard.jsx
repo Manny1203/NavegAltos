@@ -705,28 +705,42 @@ export default function Dashboard() {
             ))}
           </select>
 
-          <div className="modal-section-title">ICONO Y COLOR</div>
-          <div className="pin-options-row">
-            {['pin', 'coffee', 'car', 'book', 'microscope', 'utensils', 'help-circle'].map(icon => (
-              <div
-                key={icon}
-                className={`pin-option-btn icon-option ${selectedIcon === icon ? 'selected' : ''}`}
-                onClick={() => setSelectedIcon(icon)}
-              >
-                {renderPinIcon(icon, selectedIcon === icon ? 'white' : '#9ca3af')}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <div className="modal-section-title">COLOR</div>
+              <div className="pin-options-row" style={{ margin: 0, flexWrap: 'wrap', gap: '8px' }}>
+                {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
+                  <div
+                    key={color}
+                    className={`pin-option-btn color-option ${selectedColor === color ? 'selected' : ''}`}
+                    style={{ backgroundColor: color, borderColor: selectedColor === color ? '#333' : 'transparent', width: '32px', height: '32px' }}
+                    onClick={() => setSelectedColor(color)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
-
-          <div className="pin-options-row">
-            {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
-              <div
-                key={color}
-                className={`pin-option-btn color-option ${selectedColor === color ? 'selected' : ''}`}
-                style={{ backgroundColor: color, borderColor: selectedColor === color ? '#333' : 'transparent' }}
-                onClick={() => setSelectedColor(color)}
-              />
-            ))}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="modal-section-title">ÍCONO</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select
+                  className="pin-name-input"
+                  style={{ margin: 0, padding: '8px', height: '42px', fontSize: '14px', background: 'white', flex: 1 }}
+                  value={selectedIcon}
+                  onChange={(e) => setSelectedIcon(e.target.value)}
+                >
+                  <option value="pin">Pin</option>
+                  <option value="coffee">Cafetería</option>
+                  <option value="car">Coche</option>
+                  <option value="book">Libro</option>
+                  <option value="microscope">Laboratorio</option>
+                  <option value="utensils">Comida</option>
+                  <option value="help-circle">Ayuda</option>
+                </select>
+                <div style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: '8px', flexShrink: 0 }}>
+                  {renderPinIcon(selectedIcon, selectedColor)}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="pin-actions">

@@ -1216,15 +1216,9 @@ body.dark .rectoria-close-btn { background: #374151; }
     height: 46px;
   }
 
-  /* Zoom controls repositioning */
+  /* Hide zoom controls on mobile */
   .zoom-controls {
-    bottom: 385px;
-    right: 12px;
-    gap: 6px;
-  }
-  .zoom-controls .icon-btn {
-    width: 46px;
-    height: 46px;
+    display: none !important;
   }
 
   /* Modals and Menus width adjustments */
