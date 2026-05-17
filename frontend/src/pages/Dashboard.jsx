@@ -81,7 +81,7 @@ export default function Dashboard() {
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
   const [showIconCustomizer, setShowIconCustomizer] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  
+
   const [userLocationIcon, setUserLocationIcon] = useState(() => {
     return localStorage.getItem('user-location-icon') || 'default';
   });
@@ -271,14 +271,14 @@ export default function Dashboard() {
     J: 'invert(60%) sepia(100%) saturate(10000%) hue-rotate(300deg) brightness(110%) contrast(100%)',
     K: 'invert(50%) sepia(100%) saturate(10000%) hue-rotate(180deg) brightness(100%) contrast(100%)'
   };
-  
+
   const buildingColorsHex = {
     A: '#ef4444', B: '#f97316', C: '#eab308', D: '#22c55e', E: '#10b981',
     F: '#06b6d4', G: '#3b82f6', H: '#8b5cf6', I: '#d946ef', J: '#ec4899', K: '#0ea5e9'
   };
 
   const toggleHighlight = (letter) => {
-    setActiveHighlights(prev => 
+    setActiveHighlights(prev =>
       prev.includes(letter) ? prev.filter(l => l !== letter) : [...prev, letter]
     );
   };
@@ -308,8 +308,8 @@ export default function Dashboard() {
         const { data } = await supabase.from('shared_pins').select('*').eq('id', sharedPinId).maybeSingle();
         if (data) {
           const createdDate = new Date(data.created_at);
-          const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24)); 
-          
+          const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24));
+
           if (diffDays > 7) {
             toast.error('Este enlace compartido ha caducado (tiene más de 7 días).');
           } else {
@@ -320,12 +320,12 @@ export default function Dashboard() {
           toast.error('El pin compartido no existe o el enlace es incorrecto.');
         }
       }
-      
+
       if (publicPinId || sharedPinId) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     };
-    
+
     checkUrlParams();
   }, []);
 
@@ -337,7 +337,7 @@ export default function Dashboard() {
         .select('graph_data')
         .eq('id', 1)
         .maybeSingle();
-        
+
       if (!error && data && data.graph_data) {
         setCampusGraph(data.graph_data);
         return;
@@ -372,12 +372,12 @@ export default function Dashboard() {
 
     const startNode = findClosestNode(startPos.x, startPos.y, campusGraph.nodes);
     let endNode = null;
-    
+
     // Si el pin tiene una puerta oficial asignada y ese nodo aún existe en el grafo
     if (targetPin.entrance_node_id) {
       endNode = campusGraph.nodes.find(n => n.id === targetPin.entrance_node_id);
     }
-    
+
     // Si no tiene puerta o el nodo fue borrado, fallback a buscar el más cercano geográficamente
     if (!endNode) {
       endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
@@ -388,10 +388,10 @@ export default function Dashboard() {
       if (pathIds) {
         const pathNodes = pathIds.map(id => campusGraph.nodes.find(n => n.id === id));
         setCurrentRoute(pathNodes);
-        
+
         let totalMapDist = 0;
         for (let i = 0; i < pathNodes.length - 1; i++) {
-          totalMapDist += calculateDistanceMap(pathNodes[i], pathNodes[i+1]);
+          totalMapDist += calculateDistanceMap(pathNodes[i], pathNodes[i + 1]);
         }
         totalMapDist += calculateDistanceMap(startPos, startNode);
         totalMapDist += calculateDistanceMap(endPos, endNode);
@@ -666,7 +666,7 @@ export default function Dashboard() {
                   </button>
                 </>
               )}
-              
+
               {/* Personalizar Ícono */}
               <button
                 className="menu-sidebar-item"
@@ -717,7 +717,7 @@ export default function Dashboard() {
             Borrar
           </button>
           {selectedNodeId && (
-            <select 
+            <select
               style={{ background: '#f59e0b', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', outline: 'none', border: 'none', cursor: 'pointer' }}
               onChange={async (e) => {
                 const pinId = e.target.value;
@@ -727,10 +727,10 @@ export default function Dashboard() {
                   if (error) throw error;
                   toast.success('Exito. Este nodo ahora es la puerta oficial de ese edificio.');
                   fetchPins();
-                } catch(err) {
+                } catch (err) {
                   toast.error('Error al vincular: ' + err.message);
                 }
-                e.target.value = ""; 
+                e.target.value = "";
               }}
             >
               <option value="">+ Vincular puerta a un pin...</option>
@@ -760,32 +760,32 @@ export default function Dashboard() {
             }} />
           </label>
           <button style={{ background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={async () => {
-             const newGraph = { nodes: graphNodes, edges: graphEdges };
-             try {
-               // 1. Guardar en Supabase
-               const { error } = await supabase
-                 .from('campus_graphs')
-                 .upsert({ id: 1, graph_data: newGraph });
-                 
-               if (error) throw error;
-               
-               // 2. Aplicar en vivo
-               setCampusGraph(newGraph);
-               
-               // 3. Respaldo local
-               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(newGraph));
-               const downloadAnchorNode = document.createElement('a');
-               downloadAnchorNode.setAttribute("href", dataStr);
-               downloadAnchorNode.setAttribute("download", "campus_graph_backup.json");
-               document.body.appendChild(downloadAnchorNode);
-               downloadAnchorNode.click();
-               downloadAnchorNode.remove();
-               
-               toast.success('Grafo guardado en la Nube y aplicado en vivo.');
-             } catch (err) {
-               console.error('Error guardando en Supabase:', err);
-               toast.error('Error al guardar en la nube. Revisa consola.');
-             }
+            const newGraph = { nodes: graphNodes, edges: graphEdges };
+            try {
+              // 1. Guardar en Supabase
+              const { error } = await supabase
+                .from('campus_graphs')
+                .upsert({ id: 1, graph_data: newGraph });
+
+              if (error) throw error;
+
+              // 2. Aplicar en vivo
+              setCampusGraph(newGraph);
+
+              // 3. Respaldo local
+              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(newGraph));
+              const downloadAnchorNode = document.createElement('a');
+              downloadAnchorNode.setAttribute("href", dataStr);
+              downloadAnchorNode.setAttribute("download", "campus_graph_backup.json");
+              document.body.appendChild(downloadAnchorNode);
+              downloadAnchorNode.click();
+              downloadAnchorNode.remove();
+
+              toast.success('Grafo guardado en la Nube y aplicado en vivo.');
+            } catch (err) {
+              console.error('Error guardando en Supabase:', err);
+              toast.error('Error al guardar en la nube. Revisa consola.');
+            }
           }}>
             Guardar
           </button>
@@ -858,7 +858,7 @@ export default function Dashboard() {
                   <option value="book">Libro</option>
                   <option value="microscope">Laboratorio</option>
                   <option value="utensils">Comida</option>
-                  <option value="help-circle">Ayuda</option>
+                  <option value="help-circle">Otros</option>
                 </select>
                 <div style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: '8px', flexShrink: 0 }}>
                   {renderPinIcon(selectedIcon, selectedColor)}
@@ -923,15 +923,15 @@ export default function Dashboard() {
         <>
           <div className="floating-ui right-sidebar">
             <div style={{ position: 'relative' }}>
-              <button 
-                className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`} 
+              <button
+                className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`}
                 onClick={() => setShowMapMenu(!showMapMenu)}
                 title="Mapa"
               >
                 <MapIcon size={24} />
                 <span className="sidebar-tooltip">Mapa</span>
               </button>
-              
+
               {showMapMenu && (
                 <div className="map-menu-dropdown">
                   <div style={{ fontWeight: 'bold', color: '#003056', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>
@@ -940,16 +940,16 @@ export default function Dashboard() {
                   <div className="building-colors-grid">
                     {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map(letter => (
                       <label key={letter} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '10px', fontSize: '14px', color: '#4b5563', padding: '4px 0' }}>
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={activeHighlights.includes(letter)}
                           onChange={() => toggleHighlight(letter)}
                           style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: buildingColorsHex[letter] }}
                         />
-                        <div style={{ 
-                          width: '14px', 
-                          height: '14px', 
-                          borderRadius: '3px', 
+                        <div style={{
+                          width: '14px',
+                          height: '14px',
+                          borderRadius: '3px',
                           backgroundColor: buildingColorsHex[letter],
                           border: '1px solid rgba(0,0,0,0.1)'
                         }} />
@@ -972,9 +972,9 @@ export default function Dashboard() {
             </button>
             <button
               className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
-              onClick={() => { 
-                if(gpsError && !gpsEnabled) toast.error(gpsError);
-                setGpsEnabled(!gpsEnabled); 
+              onClick={() => {
+                if (gpsError && !gpsEnabled) toast.error(gpsError);
+                setGpsEnabled(!gpsEnabled);
               }}
               title="Activar GPS"
             >
@@ -1077,10 +1077,10 @@ export default function Dashboard() {
             <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
               Selecciona un ícono para representar tu ubicación actual en el mapa.
             </p>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxHeight: '400px', overflowY: 'auto', padding: '4px' }}>
               {locationIcons.map(icon => (
-                <div 
+                <div
                   key={icon.id}
                   onClick={() => setUserLocationIcon(icon.id)}
                   style={{
@@ -1111,8 +1111,8 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <button 
-              className="btn-modal-submit" 
+            <button
+              className="btn-modal-submit"
               style={{ marginTop: '20px', background: '#3b82f6' }}
               onClick={() => setShowIconCustomizer(false)}
             >
@@ -1136,13 +1136,13 @@ export default function Dashboard() {
               ) {
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
-                
+
                 if (!deleteMode) {
                   // Auto-snap logic: check if there's a node within 1.5% distance
                   const SNAP_RADIUS = 1.5;
                   let closestNode = null;
                   let minDistance = SNAP_RADIUS;
-                  
+
                   graphNodes.forEach(node => {
                     const dist = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
                     if (dist < minDistance) {
@@ -1166,12 +1166,12 @@ export default function Dashboard() {
                     const newNode = { id: Date.now().toString(), x, y };
                     const newNodes = [...graphNodes, newNode];
                     let newEdges = [...graphEdges];
-                    
+
                     if (selectedNodeId) {
                       const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: newNode.id };
                       newEdges.push(newEdge);
                     }
-                    
+
                     setGraphNodes(newNodes);
                     setGraphEdges(newEdges);
                     saveToHistory(newNodes, newEdges);
@@ -1305,46 +1305,47 @@ export default function Dashboard() {
                   {routeEditMode && graphNodes.map(node => {
                     const isDoor = userPins.some(p => p.entrance_node_id === node.id);
                     return (
-                    <div
-                      key={node.id}
-                      style={{
-                        position: 'absolute',
-                        left: `${node.x}%`,
-                        top: `${node.y}%`,
-                        width: isDoor ? '14px' : '10px',
-                        height: isDoor ? '14px' : '10px',
-                        backgroundColor: selectedNodeId === node.id ? '#10b981' : (isDoor ? '#f59e0b' : '#3b82f6'),
-                        border: '2px solid white',
-                        borderRadius: isDoor ? '4px' : '50%',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 12,
-                        cursor: 'pointer',
-                        boxShadow: '0 0 8px rgba(0,0,0,0.4)'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (deleteMode) {
-                          const newNodes = graphNodes.filter(n => n.id !== node.id);
-                          const newEdges = graphEdges.filter(edge => edge.node1Id !== node.id && edge.node2Id !== node.id);
-                          setGraphNodes(newNodes);
-                          setGraphEdges(newEdges);
-                          saveToHistory(newNodes, newEdges);
-                          if (selectedNodeId === node.id) setSelectedNodeId(null);
-                        } else {
-                          if (selectedNodeId && selectedNodeId !== node.id) {
-                            const exists = graphEdges.find(ed => (ed.node1Id === selectedNodeId && ed.node2Id === node.id) || (ed.node2Id === selectedNodeId && ed.node1Id === node.id));
-                            if (!exists) {
-                              const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: node.id };
-                              const newEdges = [...graphEdges, newEdge];
-                              setGraphEdges(newEdges);
-                              saveToHistory(graphNodes, newEdges);
+                      <div
+                        key={node.id}
+                        style={{
+                          position: 'absolute',
+                          left: `${node.x}%`,
+                          top: `${node.y}%`,
+                          width: isDoor ? '14px' : '10px',
+                          height: isDoor ? '14px' : '10px',
+                          backgroundColor: selectedNodeId === node.id ? '#10b981' : (isDoor ? '#f59e0b' : '#3b82f6'),
+                          border: '2px solid white',
+                          borderRadius: isDoor ? '4px' : '50%',
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 12,
+                          cursor: 'pointer',
+                          boxShadow: '0 0 8px rgba(0,0,0,0.4)'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (deleteMode) {
+                            const newNodes = graphNodes.filter(n => n.id !== node.id);
+                            const newEdges = graphEdges.filter(edge => edge.node1Id !== node.id && edge.node2Id !== node.id);
+                            setGraphNodes(newNodes);
+                            setGraphEdges(newEdges);
+                            saveToHistory(newNodes, newEdges);
+                            if (selectedNodeId === node.id) setSelectedNodeId(null);
+                          } else {
+                            if (selectedNodeId && selectedNodeId !== node.id) {
+                              const exists = graphEdges.find(ed => (ed.node1Id === selectedNodeId && ed.node2Id === node.id) || (ed.node2Id === selectedNodeId && ed.node1Id === node.id));
+                              if (!exists) {
+                                const newEdge = { id: Date.now().toString() + '_edge', node1Id: selectedNodeId, node2Id: node.id };
+                                const newEdges = [...graphEdges, newEdge];
+                                setGraphEdges(newEdges);
+                                saveToHistory(graphNodes, newEdges);
+                              }
                             }
+                            setSelectedNodeId(node.id);
                           }
-                          setSelectedNodeId(node.id);
-                        }
-                      }}
-                    />
-                  )})}
+                        }}
+                      />
+                    )
+                  })}
 
                   {/* Calculated Route SVG */}
                   {currentRoute && !routeEditMode && targetPin && (
@@ -1578,7 +1579,7 @@ export default function Dashboard() {
           </button>
 
           {/* Share Button (Top Right) */}
-          <button 
+          <button
             className="share-sheet-btn"
             onClick={() => handleSharePin(selectedPin)}
             title="Compartir Pin"
@@ -1636,8 +1637,8 @@ export default function Dashboard() {
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
             {currentUser && selectedPin.user_id === currentUser.id && !selectedPin.is_public ? (
               <>
-                <button className="btn-secondary btn-public" onClick={() => { 
-                  setPublicPinData(selectedPin); 
+                <button className="btn-secondary btn-public" onClick={() => {
+                  setPublicPinData(selectedPin);
                   setOwnerName('');
                   setPinDescription('');
                   setHasSchedule(false);
@@ -1645,8 +1646,8 @@ export default function Dashboard() {
                   setCloseTime('18:00');
                   setAvailableDays([]);
                   setPinCategory('');
-                  setShowMakePublicModal(true); 
-                  setSelectedPin(null); 
+                  setShowMakePublicModal(true);
+                  setSelectedPin(null);
                 }}>
                   <Globe size={14} /> Hacer Público
                 </button>
@@ -1664,7 +1665,7 @@ export default function Dashboard() {
               </button>
             )}
 
-            <button 
+            <button
               className="btn-primary-large"
               onClick={() => {
                 setGpsEnabled(true);
@@ -1699,7 +1700,7 @@ export default function Dashboard() {
               <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
             </div>
           </div>
-          <button 
+          <button
             className="btn-cancel-trip"
             onClick={() => {
               setIsTraveling(false);
@@ -1908,7 +1909,7 @@ export default function Dashboard() {
             </div>
             <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
               Alguien te ha compartido el pin privado: <strong>{sharedPinData.name}</strong>.
-              <br/><br/>¿Qué deseas hacer con él?
+              <br /><br />¿Qué deseas hacer con él?
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button className="btn-modal-submit btn-success-submit" onClick={async () => {
@@ -1935,7 +1936,7 @@ export default function Dashboard() {
               }}>
                 Guardar en Mis Pines
               </button>
-              
+
               <button className="btn-modal-submit" style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0ea5e9' }} onClick={() => {
                 const tempPin = { ...sharedPinData, id: 'temp-' + Date.now() };
                 if (tempPin.map_id && tempPin.map_id !== 'main') {
