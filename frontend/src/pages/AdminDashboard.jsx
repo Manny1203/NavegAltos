@@ -1097,6 +1097,7 @@ export default function AdminDashboard() {
                 <option value="banos">Baños</option>
                 <option value="laboratorios">Laboratorios</option>
                 <option value="oficinas">Oficinas</option>
+                <option value="edificios">Edificios</option>
                 <option value="otros">Otros</option>
               </select>
             </div>
@@ -1113,8 +1114,8 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
               <div className="action-form-group" style={{ flex: 1 }}>
                 <label>COLOR</label>
-                <div className="admin-color-picker">
-                  {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
+                <div className="admin-color-picker" style={{ flexWrap: 'wrap', height: 'auto', gap: '8px' }}>
+                  {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7', '#ec4899', '#eab308', '#06b6d4'].map(color => (
                     <div
                       key={color}
                       className={`admin-color-circle ${editingPin.color === color ? 'selected' : ''}`}
@@ -1136,6 +1137,7 @@ export default function AdminDashboard() {
                   <option value="car">Coche</option>
                   <option value="microscope">Laboratorio</option>
                   <option value="users">Usuarios</option>
+                  <option value="building">Edificio</option>
                   <option value="more-horizontal">Otros</option>
                 </select>
               </div>

@@ -6,7 +6,7 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
 import mapImage from '../assets/mapaUniversidadVector.svg';
@@ -498,6 +498,7 @@ export default function Dashboard() {
     { id: 'banos', label: 'Baños' },
     { id: 'laboratorios', label: 'Laboratorios' },
     { id: 'alimentos', label: 'Alimentos' },
+    { id: 'edificios', label: 'Edificios' },
     { id: 'otros', label: 'Otros' }
   ];
 
@@ -534,6 +535,7 @@ export default function Dashboard() {
       case 'car': return <Car color={color} />;
       case 'microscope': return <Microscope color={color} />;
       case 'utensils': return <Utensils color={color} />;
+      case 'building': return <Building color={color} />;
       case 'more-horizontal': return <MoreHorizontal color={color} />;
       case 'help-circle': return <MoreHorizontal color={color} />; // Fallback para pines existentes
       default: return <MapPin color={color} />;
@@ -834,7 +836,7 @@ export default function Dashboard() {
             <div style={{ flex: 1 }}>
               <div className="modal-section-title">COLOR</div>
               <div className="pin-options-row" style={{ margin: 0, flexWrap: 'wrap', gap: '8px' }}>
-                {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7'].map(color => (
+                {['#ef4444', '#60a5fa', '#f97316', '#10b981', '#a855f7', '#ec4899', '#eab308', '#06b6d4'].map(color => (
                   <div
                     key={color}
                     className={`pin-option-btn color-option ${selectedColor === color ? 'selected' : ''}`}
@@ -859,6 +861,7 @@ export default function Dashboard() {
                   <option value="book">Libro</option>
                   <option value="microscope">Laboratorio</option>
                   <option value="utensils">Comida</option>
+                  <option value="building">Edificio</option>
                   <option value="more-horizontal">Otros</option>
                 </select>
                 <div style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: '8px', flexShrink: 0 }}>
