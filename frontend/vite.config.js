@@ -12,12 +12,20 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: [], // No precache static files
-        navigateFallback: null, // No fallback HTML
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpeg,jpg,json}'], // Precache static files
+        navigateFallback: '/index.html', // Fallback to index.html for SPA routing
         runtimeCaching: [
           {
-            urlPattern: /.*/i,
-            handler: 'NetworkOnly',
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              },
+              networkTimeoutSeconds: 10
+            }
           }
         ]
       },

@@ -52,14 +52,29 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Error al conectar con Google.');
+    }
+  };
+
   return (
     <>
       <div className="auth-container">
         
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-          <h1 style={{ color: '#003056', fontSize: '28px', fontWeight: '800', lineHeight:'1.1' }}>
+          <h1 style={{ color: 'var(--text-heading)', fontSize: '28px', fontWeight: '800', lineHeight:'1.1' }}>
             NavegAltos<br/>
-            <span style={{ fontSize: '12px', fontWeight: '400', color: '#6b7280' }}>
+            <span style={{ fontSize: '12px', fontWeight: '400', color: 'var(--text-muted)' }}>
               Centro Universitario de los Altos
             </span>
           </h1>
@@ -113,6 +128,22 @@ export default function RegisterPage() {
             {isLoading ? "Registrando..." : "Registrarse"}
           </button>
         </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+          <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
+          <span style={{ padding: '0 10px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>O</span>
+          <hr style={{ flex: 1, borderColor: 'var(--border-color)', borderTop: '1px' }} />
+        </div>
+
+        <button 
+          type="button" 
+          onClick={handleGoogleLogin}
+          className="auth-button"
+          style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border-color)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '18px', height: '18px' }} />
+          Continuar con Google
+        </button>
 
         <div className="auth-footer">
           ¿Ya tienes cuenta? <Link to="/login" className="auth-link">Inicia sesión</Link>

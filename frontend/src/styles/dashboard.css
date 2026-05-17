@@ -733,7 +733,7 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  background: #f3f4f6;
+  background: transparent;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -743,12 +743,39 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s;
-  color: #6b7280;
+  color: var(--text-muted);
+}
+
+.share-sheet-btn {
+  position: absolute;
+  top: 16px;
+  right: 56px;
+  background: transparent;
+  color: var(--text-muted);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.share-sheet-btn:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
+}
+
+body.dark .share-sheet-btn:hover,
+body.dark .close-sheet-btn:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 .close-sheet-btn:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: rgba(0,0,0,0.05);
+  color: var(--text-main);
 }
 
 .sheet-header h3 {
@@ -1066,6 +1093,12 @@ textarea.auth-input {
 }
 .action-modal .btn-public-submit:hover { background: rgba(234, 179, 8, 0.15); }
 
+.action-modal .btn-success-submit {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+}
+.action-modal .btn-success-submit:hover { background: rgba(16, 185, 129, 0.15); }
+
 /* --- MAP MENU GRID --- */
 .building-colors-grid {
   display: grid;
@@ -1231,7 +1264,8 @@ body.dark .rectoria-close-btn { background: #374151; }
 
   .modal-overlay, 
   .pin-creator-modal, 
-  .pin-details-sheet {
+  .pin-details-sheet,
+  .action-modal {
     width: 90% !important;
     max-width: 340px;
     padding: 16px !important;
@@ -1373,12 +1407,13 @@ body.dark .stat-value {
 
 .sheet-schedule-box {
   display: flex;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 20px;
+  padding: 16px 20px;
   background: #f8fafc;
   border-radius: 12px;
   margin-bottom: 16px;
   border: 1px solid #e2e8f0;
+  justify-content: space-between;
 }
 body.dark .sheet-schedule-box {
   background: #374151;

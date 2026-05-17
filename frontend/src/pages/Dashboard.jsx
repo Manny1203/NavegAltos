@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { calculateAffineCoefficients, transformCoordinates, findShortestPath, findClosestNode, calculateDistanceMap, mapDistanceToMeters } from '../lib/geoUtils';
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2
 } from 'lucide-react';
+import UserProfile from '../components/UserProfile';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
 import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
@@ -78,6 +80,7 @@ export default function Dashboard() {
   // Menu sidebar state
   const [showMenuSidebar, setShowMenuSidebar] = useState(false);
   const [showIconCustomizer, setShowIconCustomizer] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   
   const [userLocationIcon, setUserLocationIcon] = useState(() => {
     return localStorage.getItem('user-location-icon') || 'default';
@@ -92,6 +95,13 @@ export default function Dashboard() {
   const [publicPinData, setPublicPinData] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportPinData, setReportPinData] = useState(null);
+
+  // Shared pin state
+  const [showSharedPinModal, setShowSharedPinModal] = useState(false);
+  const [sharedPinData, setSharedPinData] = useState(null);
+
+  // Confirm delete state
+  const [pinToDelete, setPinToDelete] = useState(null);
 
   // Make Public Form State
   const [hasSchedule, setHasSchedule] = useState(false);
@@ -279,6 +289,46 @@ export default function Dashboard() {
     fetchCampusGraph();
   }, [activeFilter, visibilityFilter, currentUser?.id]);
 
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const publicPinId = params.get('pin');
+      const sharedPinId = params.get('shared');
+
+      if (publicPinId) {
+        const { data } = await supabase.from('pins').select('*').eq('id', publicPinId).eq('is_public', true).maybeSingle();
+        if (data) {
+          setSelectedPin(data);
+          if (data.map_id && data.map_id !== 'main') {
+            setCurrentBuilding(data.map_id);
+            setSelectedFloor(data.floor || 'PB');
+          }
+        }
+      } else if (sharedPinId) {
+        const { data } = await supabase.from('shared_pins').select('*').eq('id', sharedPinId).maybeSingle();
+        if (data) {
+          const createdDate = new Date(data.created_at);
+          const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24)); 
+          
+          if (diffDays > 7) {
+            toast.error('Este enlace compartido ha caducado (tiene más de 7 días).');
+          } else {
+            setSharedPinData(data.pin_data);
+            setShowSharedPinModal(true);
+          }
+        } else {
+          toast.error('El pin compartido no existe o el enlace es incorrecto.');
+        }
+      }
+      
+      if (publicPinId || sharedPinId) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+    
+    checkUrlParams();
+  }, []);
+
   const fetchCampusGraph = async () => {
     try {
       // 1. Intentar cargar desde Supabase
@@ -321,7 +371,17 @@ export default function Dashboard() {
     const endPos = { x: targetPin.x_coordinate, y: targetPin.y_coordinate };
 
     const startNode = findClosestNode(startPos.x, startPos.y, campusGraph.nodes);
-    const endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
+    let endNode = null;
+    
+    // Si el pin tiene una puerta oficial asignada y ese nodo aún existe en el grafo
+    if (targetPin.entrance_node_id) {
+      endNode = campusGraph.nodes.find(n => n.id === targetPin.entrance_node_id);
+    }
+    
+    // Si no tiene puerta o el nodo fue borrado, fallback a buscar el más cercano geográficamente
+    if (!endNode) {
+      endNode = findClosestNode(endPos.x, endPos.y, campusGraph.nodes);
+    }
 
     if (startNode && endNode) {
       const pathIds = findShortestPath(campusGraph.nodes, campusGraph.edges, startNode.id, endNode.id);
@@ -352,14 +412,21 @@ export default function Dashboard() {
   // Arrival Check Effect
   useEffect(() => {
     if (isTraveling && destinationPin && userLocation) {
-      // routeDistance is updated continuously based on userLocation.
-      if (routeDistance > 0 && routeDistance < 15) {
-        alert("¡Has llegado a tu destino!");
+      // Use direct line distance for arrival check to avoid node snapping issues
+      const distMap = Math.hypot(userLocation.x - destinationPin.x_coordinate, userLocation.y - destinationPin.y_coordinate);
+      const directDistanceMeters = mapDistanceToMeters(distMap);
+
+      // TODO: Pruebas de campo requeridas.
+      // 25 metros puede ser mucho en teoría, pero debido a la imprecisión
+      // típica del GPS en dispositivos móviles (10-20m) puede ser necesario.
+      // Ajustar después de pruebas físicas.
+      if (directDistanceMeters < 25) { // 25 meters arrival radius
+        toast.success('Has llegado a tu destino.');
         setIsTraveling(false);
         setDestinationPin(null);
       }
     }
-  }, [routeDistance, isTraveling, destinationPin, userLocation]);
+  }, [userLocation, isTraveling, destinationPin]);
 
   const fetchUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -472,6 +539,43 @@ export default function Dashboard() {
     }
   };
 
+  const handleSharePin = async (pin) => {
+    try {
+      const baseUrl = window.location.origin;
+      let shareUrl = '';
+
+      if (pin.is_public) {
+        shareUrl = `${baseUrl}/dashboard?pin=${pin.id}`;
+      } else {
+        if (!currentUser) {
+          toast.error('Debes iniciar sesión para compartir pines privados.');
+          return;
+        }
+        const { data, error } = await supabase.from('shared_pins').insert([{
+          shared_by: currentUser.id,
+          pin_data: pin
+        }]).select().single();
+
+        if (error) throw error;
+        shareUrl = `${baseUrl}/dashboard?shared=${data.id}`;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: `Ubicación en NavegAltos: ${pin.name}`,
+          text: `Mira esta ubicación en NavegAltos: ${pin.name}`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Enlace copiado al portapapeles.');
+      }
+    } catch (err) {
+      console.error('Error compartiendo pin:', err);
+      toast.error('Hubo un error al compartir el pin.');
+    }
+  };
+
   return (
     <div className="dashboard-container">
 
@@ -576,26 +680,23 @@ export default function Dashboard() {
                 </div>
               </button>
 
-              {/* Dark Mode Toggle */}
+              {/* Mi Perfil */}
               <button
                 className="menu-sidebar-item"
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
                 style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
               >
-                {darkMode ? <Sun size={20} color="#f59e0b" /> : <Moon size={20} color="#6b7280" />}
+                <User size={20} color="#3b82f6" />
                 <div className="menu-item-text">
-                  <span className="menu-item-label">
-                    {darkMode ? 'Modo Claro' : 'Modo Oscuro'}
-                    <span style={{ fontSize: '10px', background: '#E25E24', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px', fontWeight: 'bold' }}>BETA</span>
-                  </span>
-                  <span className="menu-item-desc">Cambiar tema visual</span>
+                  <span className="menu-item-label">Mi Perfil</span>
+                  <span className="menu-item-desc">Foto, tema, NIP y más</span>
                 </div>
               </button>
 
               <button
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
-                style={{ color: '#cf1010', marginTop: 'auto' }}
+                style={{ color: '#cf1010', marginTop: '0' }}
               >
                 <LogOut size={20} />
                 <div className="menu-item-text">
@@ -615,6 +716,29 @@ export default function Dashboard() {
             <Trash2 size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
             Borrar
           </button>
+          {selectedNodeId && (
+            <select 
+              style={{ background: '#f59e0b', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', outline: 'none', border: 'none', cursor: 'pointer' }}
+              onChange={async (e) => {
+                const pinId = e.target.value;
+                if (!pinId) return;
+                try {
+                  const { error } = await supabase.from('pins').update({ entrance_node_id: selectedNodeId }).eq('id', pinId);
+                  if (error) throw error;
+                  toast.success('Exito. Este nodo ahora es la puerta oficial de ese edificio.');
+                  fetchPins();
+                } catch(err) {
+                  toast.error('Error al vincular: ' + err.message);
+                }
+                e.target.value = ""; 
+              }}
+            >
+              <option value="">+ Vincular puerta a un pin...</option>
+              {userPins.map(pin => (
+                <option key={pin.id} value={pin.id}>{pin.name || pin.category}</option>
+              ))}
+            </select>
+          )}
           <button style={{ background: '#f3f4f6', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => setSelectedNodeId(null)}>
             Deseleccionar
           </button>
@@ -629,7 +753,7 @@ export default function Dashboard() {
                     const data = JSON.parse(event.target.result);
                     setGraphNodes(data.nodes || []);
                     setGraphEdges(data.edges || []);
-                  } catch (err) { alert('Error al cargar archivo JSON'); }
+                  } catch (err) { toast.error('Error al cargar archivo JSON'); }
                 };
                 reader.readAsText(file);
               }
@@ -657,10 +781,10 @@ export default function Dashboard() {
                downloadAnchorNode.click();
                downloadAnchorNode.remove();
                
-               alert('Grafo guardado en la Nube exitosamente y aplicado en vivo.');
+               toast.success('Grafo guardado en la Nube y aplicado en vivo.');
              } catch (err) {
                console.error('Error guardando en Supabase:', err);
-               alert('Error al guardar en la nube. Revisa consola.');
+               toast.error('Error al guardar en la nube. Revisa consola.');
              }
           }}>
             Guardar
@@ -750,7 +874,7 @@ export default function Dashboard() {
             }}>Cancelar</button>
             <button className="pin-action-btn btn-save" onClick={async () => {
               if (!newPinName) {
-                alert("Por favor, ponle un nombre a tu pin.");
+                toast.error('Por favor, ponle un nombre a tu pin.');
                 return;
               }
               try {
@@ -782,7 +906,7 @@ export default function Dashboard() {
                 }
               } catch (error) {
                 console.error("Error saving pin to Supabase:", error);
-                alert("Hubo un error al guardar el pin. Intenta de nuevo.");
+                toast.error('Hubo un error al guardar el pin. Intenta de nuevo.');
               } finally {
                 setShowPinModal(false);
                 setMarkerMode(false);
@@ -849,7 +973,7 @@ export default function Dashboard() {
             <button
               className={`icon-btn sidebar-btn ${gpsEnabled ? 'sidebar-active active-filter' : ''}`}
               onClick={() => { 
-                if(gpsError && !gpsEnabled) alert(gpsError);
+                if(gpsError && !gpsEnabled) toast.error(gpsError);
                 setGpsEnabled(!gpsEnabled); 
               }}
               title="Activar GPS"
@@ -861,7 +985,7 @@ export default function Dashboard() {
               className={`icon-btn sidebar-btn ${visibilityFilter === 'private' ? 'sidebar-active active-filter' : ''}`}
               onClick={() => {
                 if (!currentUser) {
-                  alert("Debes iniciar sesión para ver tus pines privados.");
+                  toast.error('Debes iniciar sesión para ver tus pines privados.');
                   return;
                 }
                 setVisibilityFilter(visibilityFilter === 'private' ? 'all' : 'private');
@@ -926,8 +1050,19 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* User Profile Panel */}
+      {showProfile && (
+        <UserProfile
+          onClose={() => setShowProfile(false)}
+          onLogout={handleLogout}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+      )}
+
       {/* Icon Customizer Modal */}
       {showIconCustomizer && (
+
         <div className="action-modal-overlay" style={{ zIndex: 1100 }}>
           <div className="action-modal" style={{ maxWidth: '400px' }}>
             <button className="btn-close" onClick={() => setShowIconCustomizer(false)}>
@@ -1167,18 +1302,20 @@ export default function Dashboard() {
                       </svg>
                     );
                   })}
-                  {routeEditMode && graphNodes.map(node => (
+                  {routeEditMode && graphNodes.map(node => {
+                    const isDoor = userPins.some(p => p.entrance_node_id === node.id);
+                    return (
                     <div
                       key={node.id}
                       style={{
                         position: 'absolute',
                         left: `${node.x}%`,
                         top: `${node.y}%`,
-                        width: '10px',
-                        height: '10px',
-                        backgroundColor: selectedNodeId === node.id ? '#10b981' : '#3b82f6',
+                        width: isDoor ? '14px' : '10px',
+                        height: isDoor ? '14px' : '10px',
+                        backgroundColor: selectedNodeId === node.id ? '#10b981' : (isDoor ? '#f59e0b' : '#3b82f6'),
                         border: '2px solid white',
-                        borderRadius: '50%',
+                        borderRadius: isDoor ? '4px' : '50%',
                         transform: 'translate(-50%, -50%)',
                         zIndex: 12,
                         cursor: 'pointer',
@@ -1207,7 +1344,7 @@ export default function Dashboard() {
                         }
                       }}
                     />
-                  ))}
+                  )})}
 
                   {/* Calculated Route SVG */}
                   {currentRoute && !routeEditMode && targetPin && (
@@ -1216,8 +1353,7 @@ export default function Dashboard() {
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
-                          ...currentRoute.map(n => `${n.x},${n.y}`),
-                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                          ...currentRoute.map(n => `${n.x},${n.y}`)
                         ].join(' ')}
                         fill="none"
                         stroke="#1e40af"
@@ -1231,8 +1367,7 @@ export default function Dashboard() {
                       <polyline
                         points={[
                           `${userLocation ? userLocation.x : 21.875},${userLocation ? userLocation.y : 82.018}`,
-                          ...currentRoute.map(n => `${n.x},${n.y}`),
-                          `${targetPin.x_coordinate},${targetPin.y_coordinate}`
+                          ...currentRoute.map(n => `${n.x},${n.y}`)
                         ].join(' ')}
                         fill="none"
                         stroke="#3b82f6"
@@ -1442,6 +1577,15 @@ export default function Dashboard() {
             </span>
           </button>
 
+          {/* Share Button (Top Right) */}
+          <button 
+            className="share-sheet-btn"
+            onClick={() => handleSharePin(selectedPin)}
+            title="Compartir Pin"
+          >
+            <Share2 size={14} />
+          </button>
+
           <div className="sheet-header">
             <h3>{selectedPin.name}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
@@ -1470,16 +1614,16 @@ export default function Dashboard() {
           {selectedPin.has_schedule && (
             <div className="sheet-schedule-box">
               <div style={{ flex: 1 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>
-                  <Clock size={12} /> HORARIO
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                  <Clock size={14} /> HORARIO
                 </span>
-                <span className="schedule-value">
+                <span className="schedule-value" style={{ display: 'block', fontSize: '14px' }}>
                   {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
                 </span>
               </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
-                <span className="schedule-value">
+              <div style={{ flex: 1, paddingLeft: '8px' }}>
+                <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>DÍAS</span>
+                <span className="schedule-value" style={{ display: 'block', fontSize: '14px', lineHeight: '1.4' }}>
                   {Array.isArray(selectedPin.available_days)
                     ? selectedPin.available_days.join(', ')
                     : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
@@ -1506,13 +1650,7 @@ export default function Dashboard() {
                 }}>
                   <Globe size={14} /> Hacer Público
                 </button>
-                <button className="btn-secondary btn-danger" onClick={async () => {
-                  if (window.confirm('¿Seguro que quieres borrar este pin?')) {
-                    await supabase.from('pins').delete().eq('id', selectedPin.id);
-                    setUserPins(userPins.filter(p => p.id !== selectedPin.id));
-                    setSelectedPin(null);
-                  }
-                }}>
+                <button className="btn-secondary btn-danger" onClick={() => setPinToDelete(selectedPin)}>
                   <Trash2 size={14} /> Borrar Pin
                 </button>
               </>
@@ -1655,17 +1793,17 @@ export default function Dashboard() {
 
             <button className="btn-modal-submit btn-public-submit" onClick={async () => {
               if (!pinCategory) {
-                alert('Por favor, selecciona una categoría para el pin.');
+                toast.error('Por favor, selecciona una categoría para el pin.');
                 return;
               }
 
               if (!ownerName) {
-                alert('Por favor, indica a quién le pertenece este pin.');
+                toast.error('Por favor, indica a quién le pertenece este pin.');
                 return;
               }
 
               if (!currentUser || !publicPinData) {
-                alert('Error de sesión o pin no seleccionado.');
+                toast.error('Error de sesión o pin no seleccionado.');
                 return;
               }
 
@@ -1687,14 +1825,14 @@ export default function Dashboard() {
 
                 if (error) throw error;
 
-                alert('Solicitud enviada a revisión exitosamente.');
+                toast.success('Solicitud enviada a revision. En breve revisamos tu pin.');
                 setShowMakePublicModal(false);
                 setOwnerName('');
                 setPinDescription('');
                 setHasSchedule(false);
               } catch (e) {
                 console.error("Error pidiendo pin público: ", e);
-                alert("Hubo un error al enviar la solicitud.");
+                toast.error('Hubo un error al enviar la solicitud.');
               }
             }}>
               <Globe size={16} /> Enviar Solicitud
@@ -1730,7 +1868,7 @@ export default function Dashboard() {
             </div>
             <button className="btn-modal-submit btn-report-submit" onClick={async () => {
               if (!reportReason.trim()) {
-                alert('Por favor, escribe una razón para el reporte.');
+                toast.error('Por favor, escribe una razón para el reporte.');
                 return;
               }
               try {
@@ -1741,16 +1879,115 @@ export default function Dashboard() {
                   status: 'pending'
                 }]);
                 if (error) throw error;
-                alert('Reporte enviado al administrador. ¡Gracias por tu ayuda!');
+                toast.success('Reporte enviado. Gracias por tu ayuda.');
                 setShowReportModal(false);
                 setReportReason('');
               } catch (e) {
                 console.error('Error enviando reporte:', e);
-                alert('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
+                toast.error('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
               }
             }}>
               <AlertTriangle size={16} /> Enviar Reporte
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* SHARED PIN RECEPTION MODAL */}
+      {showSharedPinModal && sharedPinData && (
+        <div className="action-modal-overlay">
+          <div className="action-modal">
+            <button className="btn-close" onClick={() => { setShowSharedPinModal(false); setSharedPinData(null); }}>
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+            </button>
+            <div className="action-modal-header">
+              <Share2 size={20} color="#3b82f6" />
+              <h3>Pin Compartido</h3>
+            </div>
+            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+              Alguien te ha compartido el pin privado: <strong>{sharedPinData.name}</strong>.
+              <br/><br/>¿Qué deseas hacer con él?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn-modal-submit btn-success-submit" onClick={async () => {
+                if (!currentUser) {
+                  toast.error('Debes iniciar sesión para guardar el pin en tu cuenta.');
+                  return;
+                }
+                const { id, created_at, updated_at, owner, has_schedule, open_time, close_time, available_days, entrance_node_id, ...restOfPin } = sharedPinData;
+                const newPin = {
+                  ...restOfPin,
+                  user_id: currentUser.id,
+                  is_public: false
+                };
+                const { error } = await supabase.from('pins').insert([newPin]);
+                if (error) {
+                  toast.error('Error al guardar el pin: ' + error.message);
+                  console.error('Error insertando pin clonado:', error);
+                } else {
+                  toast.success('Pin guardado en tu cuenta exitosamente.');
+                  fetchPins();
+                  setShowSharedPinModal(false);
+                  setSharedPinData(null);
+                }
+              }}>
+                Guardar en Mis Pines
+              </button>
+              
+              <button className="btn-modal-submit" style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0ea5e9' }} onClick={() => {
+                const tempPin = { ...sharedPinData, id: 'temp-' + Date.now() };
+                if (tempPin.map_id && tempPin.map_id !== 'main') {
+                  setCurrentBuilding(tempPin.map_id);
+                  setSelectedFloor(tempPin.floor || 'PB');
+                }
+                setGpsEnabled(true);
+                setDestinationPin(tempPin);
+                setIsTraveling(true);
+                setShowSharedPinModal(false);
+                setSharedPinData(null);
+              }}>
+                <Route size={16} /> Solo Iniciar Viaje
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE PIN MODAL */}
+      {pinToDelete && (
+        <div className="action-modal-overlay">
+          <div className="action-modal" style={{ maxWidth: '340px' }}>
+            <div className="action-modal-header" style={{ color: '#ef4444' }}>
+              <Trash2 size={20} color="#ef4444" />
+              <h3 style={{ color: '#ef4444' }}>Borrar Pin</h3>
+            </div>
+            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
+              ¿Seguro que quieres borrar <strong>{pinToDelete.name || 'este pin'}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className="btn-modal-submit"
+                style={{ flex: 1, background: 'rgba(107,114,128,0.1)', color: 'var(--text-muted)' }}
+                onClick={() => setPinToDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-modal-submit"
+                style={{ flex: 1, background: '#ef4444', color: 'white' }}
+                onClick={async () => {
+                  await supabase.from('pins').delete().eq('id', pinToDelete.id);
+                  setUserPins(prev => prev.filter(p => p.id !== pinToDelete.id));
+                  setSelectedPin(null);
+                  setPinToDelete(null);
+                  toast.success('Pin eliminado correctamente.');
+                }}
+              >
+                <Trash2 size={14} /> Sí, borrar
+              </button>
+            </div>
           </div>
         </div>
       )}
