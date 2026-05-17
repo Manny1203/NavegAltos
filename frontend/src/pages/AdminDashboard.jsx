@@ -1136,6 +1136,7 @@ export default function AdminDashboard() {
                   <option value="car">Coche</option>
                   <option value="microscope">Laboratorio</option>
                   <option value="users">Usuarios</option>
+                  <option value="more-horizontal">Otros</option>
                 </select>
               </div>
             </div>
