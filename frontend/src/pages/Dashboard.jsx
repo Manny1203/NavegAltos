@@ -1513,8 +1513,8 @@ export default function Dashboard() {
             }}
           >
             <TransformWrapper
-              initialScale={0.5}
-              minScale={0.3}
+              initialScale={1}
+              minScale={1}
               maxScale={3}
               centerOnInit={true}
               centerZoomedOut={true}

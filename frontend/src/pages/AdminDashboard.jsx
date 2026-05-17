@@ -836,12 +836,13 @@ export default function AdminDashboard() {
               {/* Internal Map Area */}
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <TransformWrapper
-                  initialScale={0.8}
-                  minScale={0.5}
+                  initialScale={1}
+                  minScale={1}
                   maxScale={3}
                   centerOnInit={true}
                   centerZoomedOut={true}
                   limitToBounds={false}
+                  disabled={isZenMode}
                 >
                   <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
                     <div className="rectoria-map-container">
