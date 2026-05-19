@@ -417,10 +417,10 @@ export default function Dashboard() {
       const directDistanceMeters = mapDistanceToMeters(distMap);
 
       // TODO: Pruebas de campo requeridas.
-      // 25 metros puede ser mucho en teoría, pero debido a la imprecisión
+      // 15 metros puede ser mucho en teoría, pero debido a la imprecisión
       // típica del GPS en dispositivos móviles (10-20m) puede ser necesario.
       // Ajustar después de pruebas físicas.
-      if (directDistanceMeters < 25) { // 25 meters arrival radius
+      if (directDistanceMeters < 15) { // 15 meters arrival radius
         toast.success('Has llegado a tu destino.');
         setIsTraveling(false);
         setDestinationPin(null);

@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('requests'); // 'requests', 'public_pins'
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   // Data states
   const [requests, setRequests] = useState([]);
@@ -449,7 +450,8 @@ export default function AdminDashboard() {
           style={{
             transform: (isSidebarOpen && !isZenMode) ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            zIndex: 50
+            zIndex: 50,
+            boxShadow: (isSidebarOpen && !isZenMode) ? undefined : 'none'
           }}
         >
 
@@ -733,9 +735,9 @@ export default function AdminDashboard() {
         {/* Right Content Area (Interactive Map) */}
         <div className="admin-map-area">
           <TransformWrapper
-            initialScale={0.8}
-            minScale={0.8}
-            maxScale={3}
+            initialScale={window.innerWidth > 768 ? 0.8 : 0.5}
+            minScale={window.innerWidth > 768 ? 0.8 : 0.3}
+            maxScale={5}
             centerOnInit={true}
             centerZoomedOut={true}
             limitToBounds={true}
@@ -746,6 +748,8 @@ export default function AdminDashboard() {
                   src={mapImage}
                   alt="Mapa Universitario"
                   className="map-image"
+                  style={{ opacity: isMapLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+                  onLoad={() => setIsMapLoaded(true)}
                 />
 
                 {/* Botón estático para Rectoría */}
