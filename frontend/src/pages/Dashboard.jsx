@@ -1631,26 +1631,25 @@ export default function Dashboard() {
               <span className="stat-label">TIEMPO</span>
               <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
             </div>
+            {selectedPin.has_schedule && (
+              <>
+                <div className="stat-box">
+                  <span className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={12} /> HORARIO
+                  </span>
+                  <span className="stat-value" style={{ fontSize: '14px' }}>
+                    {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
+                  </span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">DÍAS</span>
+                  <span className="stat-value" style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                    {parseDays(selectedPin.available_days).join(', ')}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
-
-          {selectedPin.has_schedule && (
-            <div className="sheet-schedule-box">
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>
-                  <Clock size={14} /> HORARIO
-                </span>
-                <span className="schedule-value" style={{ display: 'block', fontSize: '14px' }}>
-                  {selectedPin.open_time ? selectedPin.open_time.slice(0, 5) : '--:--'} - {selectedPin.close_time ? selectedPin.close_time.slice(0, 5) : '--:--'}
-                </span>
-              </div>
-              <div style={{ flex: 1, paddingLeft: '8px' }}>
-                <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>DÍAS</span>
-                <span className="schedule-value" style={{ display: 'block', fontSize: '14px', lineHeight: '1.4' }}>
-                  {parseDays(selectedPin.available_days).join(', ')}
-                </span>
-              </div>
-            </div>
-          )}
 
           <div className="sheet-actions-secondary" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
             {/* Private pin owned by the user: show Hacer Público + Borrar */}
