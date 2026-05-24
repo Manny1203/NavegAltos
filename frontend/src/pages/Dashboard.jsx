@@ -461,6 +461,7 @@ export default function Dashboard() {
 
   // Logout handler
   const handleLogout = async () => {
+    localStorage.removeItem('guest_mode');
     await supabase.auth.signOut();
     navigate('/login');
   };
@@ -534,6 +535,10 @@ export default function Dashboard() {
   };
 
   const toggleMarkerMode = () => {
+    if (!currentUser && !markerMode) {
+      toast.error('Debes iniciar sesión para crear pines.');
+      return;
+    }
     setMarkerMode(!markerMode);
     setShowPinModal(false);
     setSelectedPin(null);
@@ -701,27 +706,29 @@ export default function Dashboard() {
               </button>
 
               {/* Mi Perfil */}
-              <button
-                className="menu-sidebar-item"
-                onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
-                style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
-              >
-                <User size={20} color="#3b82f6" />
-                <div className="menu-item-text">
-                  <span className="menu-item-label">Mi Perfil</span>
-                  <span className="menu-item-desc">Foto, tema, NIP y más</span>
-                </div>
-              </button>
+              {currentUser && (
+                <button
+                  className="menu-sidebar-item"
+                  onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
+                  style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
+                >
+                  <User size={20} color="#3b82f6" />
+                  <div className="menu-item-text">
+                    <span className="menu-item-label">Mi Perfil</span>
+                    <span className="menu-item-desc">Foto, tema, NIP y más</span>
+                  </div>
+                </button>
+              )}
 
               <button
                 className="menu-sidebar-item text-danger"
                 onClick={handleLogout}
-                style={{ color: '#cf1010', marginTop: '0' }}
+                style={{ color: '#cf1010', marginTop: currentUser ? '0' : 'auto' }}
               >
                 <LogOut size={20} />
                 <div className="menu-item-text">
-                  <span className="menu-item-label">Cerrar Sesión</span>
-                  <span className="menu-item-desc">Salir de tu cuenta</span>
+                  <span className="menu-item-label">{currentUser ? 'Cerrar Sesión' : 'Iniciar Sesión / Salir'}</span>
+                  <span className="menu-item-desc">{currentUser ? 'Salir de tu cuenta' : 'Regresar al inicio de sesión'}</span>
                 </div>
               </button>
             </div>
@@ -1675,7 +1682,13 @@ export default function Dashboard() {
               </>
             ) : (
               /* Public pin (even if owner sent it to review) or other user's pin: show Reportar */
-              <button className="btn-report" onClick={() => { setReportPinData(selectedPin); setShowReportModal(true); setSelectedPin(null); }}>
+              <button className="btn-report" onClick={() => { 
+                if (!currentUser) {
+                  toast.error('Debes iniciar sesión para reportar.');
+                  return;
+                }
+                setReportPinData(selectedPin); setShowReportModal(true); setSelectedPin(null); 
+              }}>
                 <span style={{ display: 'flex', width: '14px', height: '14px', alignItems: 'center', justifyContent: 'center' }}>
                   <AlertTriangle size={14} style={{ display: 'block', width: '14px', height: '14px' }} />
                 </span>

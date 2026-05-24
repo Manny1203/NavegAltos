@@ -64,6 +64,7 @@ export default function LoginPage() {
       // Reset attempts on successful login
       localStorage.removeItem('login_attempts');
       localStorage.removeItem('lockout_until');
+      localStorage.removeItem('guest_mode');
       
       const searchParams = location.state?.search || '';
       navigate(`/dashboard${searchParams}`); 
@@ -108,6 +109,12 @@ export default function LoginPage() {
       console.error(error);
       setErrorMsg('Error al conectar con Google.');
     }
+  };
+
+  const handleGuestLogin = () => {
+    localStorage.setItem('guest_mode', 'true');
+    const searchParams = location.state?.search || '';
+    navigate(`/dashboard${searchParams}`);
   };
 
   return (
@@ -190,6 +197,16 @@ export default function LoginPage() {
         >
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '18px', height: '18px' }} />
           Continuar con Google
+        </button>
+
+        <button 
+          type="button" 
+          onClick={handleGuestLogin}
+          className="auth-button"
+          style={{ background: '#f3f4f6', color: '#4b5563', border: '1px solid #d1d5db', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+        >
+          <User size={18} />
+          Entrar como Invitado
         </button>
 
         <div className="auth-footer">

@@ -30,7 +30,9 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!session) {
+  const isGuest = localStorage.getItem('guest_mode') === 'true';
+
+  if (!session && !isGuest) {
     return <Navigate to="/login" replace state={{ search: location.search }} />;
   }
 
