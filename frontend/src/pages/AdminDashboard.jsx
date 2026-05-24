@@ -40,6 +40,23 @@ const locationIcons = [
   { id: 'vaca', name: 'Vaca', src: vacaIcon }
 ];
 
+const parseDays = (days) => {
+  if (!days) return ['L', 'M', 'Mi', 'J', 'V'];
+  if (Array.isArray(days)) return days;
+  if (typeof days === 'string') {
+    if (days.startsWith('{') && days.endsWith('}')) {
+      const inner = days.slice(1, -1);
+      return inner ? inner.split(',').map(s => s.trim().replace(/^"|"$/g, '')) : [];
+    }
+    try {
+      return JSON.parse(days);
+    } catch (e) {
+      return days.split(',').map(s => s.trim());
+    }
+  }
+  return ['L', 'M', 'Mi', 'J', 'V'];
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -283,9 +300,7 @@ export default function AdminDashboard() {
   const handleUpdateRequest = async () => {
     try {
       let days = editingRequest.available_days;
-      if (Array.isArray(days)) {
-        days = JSON.stringify(days);
-      }
+      // Removed buggy JSON.stringify that caused DB type mismatches
 
       const { error } = await supabase
         .from('pin_requests')
@@ -318,9 +333,7 @@ export default function AdminDashboard() {
       }
 
       let days = editingPin.available_days;
-      if (Array.isArray(days)) {
-        days = JSON.stringify(days);
-      }
+      // Removed buggy JSON.stringify that caused DB type mismatches
 
       const { error } = await supabase
         .from('pins')
@@ -554,9 +567,7 @@ export default function AdminDashboard() {
                               <div>
                                 <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold', display: 'block' }}>DÍAS</span>
                                 <span style={{ fontSize: '12px', color: '#334155' }}>
-                                  {Array.isArray(req.available_days)
-                                    ? req.available_days.join(', ')
-                                    : (typeof req.available_days === 'string' ? JSON.parse(req.available_days).join(', ') : 'No espec.')}
+                                  {parseDays(req.available_days).join(', ')}
                                 </span>
                               </div>
                             </div>
@@ -931,9 +942,7 @@ export default function AdminDashboard() {
               <div style={{ flex: 1 }}>
                 <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#9ca3af', marginBottom: '4px' }}>DÍAS</span>
                 <span className="schedule-value">
-                  {Array.isArray(selectedPin.available_days)
-                    ? selectedPin.available_days.join(', ')
-                    : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
+                  {parseDays(selectedPin.available_days).join(', ')}
                 </span>
               </div>
             </div>
@@ -1029,16 +1038,7 @@ export default function AdminDashboard() {
                   <label>DÍAS DISPONIBLES</label>
                   <div className="day-checkboxes">
                     {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => {
-                      let currentDays = ['L', 'M', 'Mi', 'J', 'V'];
-                      if (editingRequest.available_days) {
-                        try {
-                          currentDays = Array.isArray(editingRequest.available_days) 
-                            ? editingRequest.available_days 
-                            : JSON.parse(editingRequest.available_days);
-                        } catch (e) {
-                          console.error("Error parsing days", e);
-                        }
-                      }
+                      let currentDays = parseDays(editingRequest.available_days);
                       const isActive = currentDays.includes(day);
                       return (
                         <button
@@ -1184,16 +1184,7 @@ export default function AdminDashboard() {
                   <label>DÍAS DISPONIBLES</label>
                   <div className="day-checkboxes">
                     {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => {
-                      let currentDays = ['L', 'M', 'Mi', 'J', 'V'];
-                      if (editingPin.available_days) {
-                        try {
-                          currentDays = Array.isArray(editingPin.available_days) 
-                            ? editingPin.available_days 
-                            : JSON.parse(editingPin.available_days);
-                        } catch (e) {
-                          console.error("Error parsing days", e);
-                        }
-                      }
+                      let currentDays = parseDays(editingPin.available_days);
                       const isActive = currentDays.includes(day);
                       return (
                         <button

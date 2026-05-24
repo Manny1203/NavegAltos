@@ -61,6 +61,23 @@ const buildingMaps = {
   I: mapImageI, J: mapImageJ, K: mapImageK
 };
 
+const parseDays = (days) => {
+  if (!days) return ['L', 'M', 'Mi', 'J', 'V'];
+  if (Array.isArray(days)) return days;
+  if (typeof days === 'string') {
+    if (days.startsWith('{') && days.endsWith('}')) {
+      const inner = days.slice(1, -1);
+      return inner ? inner.split(',').map(s => s.trim().replace(/^"|"$/g, '')) : [];
+    }
+    try {
+      return JSON.parse(days);
+    } catch (e) {
+      return days.split(',').map(s => s.trim());
+    }
+  }
+  return ['L', 'M', 'Mi', 'J', 'V'];
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState(null);
@@ -1629,9 +1646,7 @@ export default function Dashboard() {
               <div style={{ flex: 1, paddingLeft: '8px' }}>
                 <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#9ca3af', marginBottom: '6px', letterSpacing: '0.5px' }}>DÍAS</span>
                 <span className="schedule-value" style={{ display: 'block', fontSize: '14px', lineHeight: '1.4' }}>
-                  {Array.isArray(selectedPin.available_days)
-                    ? selectedPin.available_days.join(', ')
-                    : (typeof selectedPin.available_days === 'string' ? JSON.parse(selectedPin.available_days).join(', ') : 'L, M, Mi, J, V')}
+                  {parseDays(selectedPin.available_days).join(', ')}
                 </span>
               </div>
             </div>
@@ -1777,7 +1792,7 @@ export default function Dashboard() {
                 {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => (
                   <button
                     key={day}
-                    className={`day-btn ${availableDays.includes(day) ? 'selected' : ''}`}
+                    className={`day-btn ${availableDays.includes(day) ? 'active' : ''}`}
                     onClick={() => setAvailableDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
                   >
                     {day}

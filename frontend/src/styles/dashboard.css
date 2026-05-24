@@ -1008,7 +1008,7 @@ body.dark .close-sheet-btn:hover {
   transition: all 0.2s;
 }
 
-.day-btn.selected {
+.day-btn.active {
   background: #003056;
   color: white;
 }
