@@ -446,6 +446,13 @@ export default function Dashboard() {
   }, [userLocation, isTraveling, destinationPin]);
 
   const fetchUser = async () => {
+    const isGuest = localStorage.getItem('guest_mode') === 'true';
+    if (isGuest) {
+      setCurrentUser(null);
+      setIsAdmin(false);
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       setCurrentUser(session.user);
@@ -1501,7 +1508,13 @@ export default function Dashboard() {
 
               <button
                 className={`rectoria-action-btn ${markerMode ? 'active' : ''}`}
-                onClick={() => setMarkerMode(!markerMode)}
+                onClick={() => {
+                  if (!currentUser && !markerMode) {
+                    toast.error('Debes iniciar sesión para crear pines.');
+                    return;
+                  }
+                  setMarkerMode(!markerMode);
+                }}
               >
                 {markerMode ? <X size={16} /> : <Plus size={16} />}
                 {markerMode ? 'Cancelar' : 'Agregar Pin'}
@@ -1700,9 +1713,19 @@ export default function Dashboard() {
               className="btn-primary-large"
               onClick={() => {
                 setGpsEnabled(true);
-                setDestinationPin(selectedPin);
+                if (selectedPin.building === 'rectoria') {
+                  setDestinationPin({
+                    ...selectedPin,
+                    x: 53.957,
+                    y: 68.560,
+                    building: null
+                  });
+                } else {
+                  setDestinationPin(selectedPin);
+                }
                 setIsTraveling(true);
                 setSelectedPin(null);
+                setCurrentBuilding(null);
               }}
             >
               <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>

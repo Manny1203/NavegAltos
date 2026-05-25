@@ -111,7 +111,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
+    await supabase.auth.signOut();
     localStorage.setItem('guest_mode', 'true');
     const searchParams = location.state?.search || '';
     navigate(`/dashboard${searchParams}`);
