@@ -6,7 +6,7 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building, ChevronDown, ChevronUp
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
 import mapImage from '../assets/mapaUniversidadVector.svg';
@@ -224,6 +224,7 @@ export default function Dashboard() {
   // Traveling State
   const [isTraveling, setIsTraveling] = useState(false);
   const [destinationPin, setDestinationPin] = useState(null);
+  const [isTripBarMinimized, setIsTripBarMinimized] = useState(false);
 
   // --- GPS CALIBRATION POINTS ---
   const calibrationPoints = [
@@ -441,6 +442,7 @@ export default function Dashboard() {
         toast.success('Has llegado a tu destino.');
         setIsTraveling(false);
         setDestinationPin(null);
+        setIsTripBarMinimized(false);
       }
     }
   }, [userLocation, isTraveling, destinationPin]);
@@ -1724,6 +1726,7 @@ export default function Dashboard() {
                   setDestinationPin(selectedPin);
                 }
                 setIsTraveling(true);
+                setIsTripBarMinimized(false);
                 setSelectedPin(null);
                 setCurrentBuilding(null);
               }}
@@ -1739,30 +1742,61 @@ export default function Dashboard() {
 
       {/* Active Trip Card */}
       {isTraveling && destinationPin && (
-        <div className="active-trip-card floating-ui">
-          <div className="trip-header">
-            <h3>En ruta hacia: {destinationPin.name}</h3>
-            <span className="trip-subtitle">{routeDistance > 0 ? `${routeDistance} metros restantes` : 'Calculando...'}</span>
-          </div>
-          <div className="trip-stats">
-            <div className="stat-box">
-              <span className="stat-label">DISTANCIA</span>
-              <span className="stat-value">{routeDistance > 0 ? `${routeDistance} m` : '---'}</span>
+        <div className={`active-trip-card floating-ui ${isTripBarMinimized ? 'minimized' : ''}`}>
+          <div className="trip-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, cursor: isTripBarMinimized ? 'pointer' : 'default' }} onClick={() => isTripBarMinimized && setIsTripBarMinimized(false)}>
+              <h3 style={{ margin: 0, fontSize: isTripBarMinimized ? '16px' : '18px', transition: 'all 0.2s' }}>
+                En ruta hacia: {destinationPin.name}
+              </h3>
+              {!isTripBarMinimized && (
+                <span className="trip-subtitle">{routeDistance > 0 ? `${routeDistance} metros restantes` : 'Calculando...'}</span>
+              )}
             </div>
-            <div className="stat-box">
-              <span className="stat-label">TIEMPO EST.</span>
-              <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
-            </div>
+            <button 
+              className="icon-btn" 
+              style={{ 
+                background: 'transparent', 
+                color: 'var(--text-muted)', 
+                boxShadow: 'none', 
+                padding: '4px', 
+                width: 'auto', 
+                height: 'auto',
+                marginLeft: '8px'
+              }} 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsTripBarMinimized(!isTripBarMinimized);
+              }}
+              title={isTripBarMinimized ? "Expandir" : "Minimizar"}
+            >
+              {isTripBarMinimized ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+            </button>
           </div>
-          <button
-            className="btn-cancel-trip"
-            onClick={() => {
-              setIsTraveling(false);
-              setDestinationPin(null);
-            }}
-          >
-            <X size={18} /> Cancelar Viaje
-          </button>
+          
+          {!isTripBarMinimized && (
+            <>
+              <div className="trip-stats">
+                <div className="stat-box">
+                  <span className="stat-label">DISTANCIA</span>
+                  <span className="stat-value">{routeDistance > 0 ? `${routeDistance} m` : '---'}</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">TIEMPO EST.</span>
+                  <span className="stat-value">{routeTime > 0 ? `${routeTime} min` : '---'}</span>
+                </div>
+              </div>
+              <button
+                className="btn-cancel-trip"
+                onClick={() => {
+                  setIsTraveling(false);
+                  setDestinationPin(null);
+                  setIsTripBarMinimized(false);
+                }}
+              >
+                <X size={18} /> Cancelar Viaje
+              </button>
+            </>
+          )}
         </div>
       )}
       {/* MAKE PUBLIC MODAL */}
@@ -2000,6 +2034,7 @@ export default function Dashboard() {
                 setGpsEnabled(true);
                 setDestinationPin(tempPin);
                 setIsTraveling(true);
+                setIsTripBarMinimized(false);
                 setShowSharedPinModal(false);
                 setSharedPinData(null);
               }}>

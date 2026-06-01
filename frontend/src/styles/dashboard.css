@@ -1454,6 +1454,10 @@ body.dark .filter-chip.active { background: #E25E24 !important; color: white !im
   border: 2px solid #10b981;
 }
 
+.active-trip-card.minimized {
+  padding: 16px 20px;
+}
+
 .active-trip-card .trip-header h3 {
   margin: 0 0 2px;
   font-size: 18px;
