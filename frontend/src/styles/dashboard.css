@@ -1508,3 +1508,104 @@ body.dark .active-trip-card {
 body.dark .active-trip-card .trip-header h3 {
   color: #f9fafb;
 }
+
+/* Custom scrollbar for Icon Customizer */
+.icon-customizer-grid::-webkit-scrollbar {
+  width: 6px;
+}
+.icon-customizer-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.icon-customizer-grid::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 48, 86, 0.2);
+  border-radius: 10px;
+}
+body.dark .icon-customizer-grid::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Icon Option Cards */
+.icon-option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: #f9fafb;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.icon-option-card.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.icon-option-card .icon-img-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.icon-option-card .icon-img-wrapper img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.icon-option-card .default-icon-dot {
+  width: 18px;
+  height: 18px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.icon-option-card .icon-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  text-align: center;
+  word-break: break-word;
+}
+
+.icon-option-card.selected .icon-name {
+  font-weight: bold;
+  color: #3b82f6;
+}
+
+/* Dark mode support */
+body.dark .icon-option-card {
+  background: #374151;
+}
+
+body.dark .icon-option-card.selected {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+body.dark .icon-option-card .icon-name {
+  color: #d1d5db;
+}
+
+body.dark .icon-option-card.selected .icon-name {
+  color: #60a5fa;
+}
+
+.action-modal-header h3 {
+  color: #003056;
+}
+
+body.dark .action-modal-header h3 {
+  color: #f9fafb !important;
+}
+
+body.dark .icon-option-card .default-icon-dot {
+  border-color: #1f2937;
+}

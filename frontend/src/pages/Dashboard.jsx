@@ -40,7 +40,7 @@ import ranaIcon from '../assets/iconosLocalizacion/Rana.svg';
 import vacaIcon from '../assets/iconosLocalizacion/Vaca.svg';
 
 const locationIcons = [
-  { id: 'default', name: 'Predeterminado', src: null },
+  { id: 'default', name: 'Por Defecto', src: null },
   { id: 'avion', name: 'Avión', src: avionIcon },
   { id: 'camaron', name: 'Camarón', src: camaronIcon },
   { id: 'chinche', name: 'Chinche', src: chincheIcon },
@@ -1109,39 +1109,27 @@ export default function Dashboard() {
             </button>
             <div className="action-modal-header" style={{ marginBottom: '16px' }}>
               <MapPin size={24} color="#3b82f6" />
-              <h3 style={{ margin: 0, color: '#003056' }}>Personalizar Ícono</h3>
+              <h3 style={{ margin: 0 }}>Personalizar Ícono</h3>
             </div>
             <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
               Selecciona un ícono para representar tu ubicación actual en el mapa.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', maxHeight: '400px', overflowY: 'auto', padding: '4px' }}>
+            <div className="icon-customizer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto', padding: '4px 2px 4px 8px' }}>
               {locationIcons.map(icon => (
                 <div
                   key={icon.id}
                   onClick={() => setUserLocationIcon(icon.id)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    background: userLocationIcon === icon.id ? '#eff6ff' : '#f9fafb',
-                    border: `2px solid ${userLocationIcon === icon.id ? '#3b82f6' : 'transparent'}`,
-                    transition: 'all 0.2s ease',
-                    boxShadow: userLocationIcon === icon.id ? '0 4px 12px rgba(59, 130, 246, 0.2)' : 'none'
-                  }}
+                  className={`icon-option-card ${userLocationIcon === icon.id ? 'selected' : ''}`}
                 >
-                  <div style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                  <div className="icon-img-wrapper">
                     {icon.src ? (
-                      <img src={icon.src} alt={icon.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                      <img src={icon.src} alt={icon.name} />
                     ) : (
-                      <div style={{ width: '18px', height: '18px', backgroundColor: '#3b82f6', borderRadius: '50%', border: '3px solid white', boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)' }}></div>
+                      <div className="default-icon-dot"></div>
                     )}
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: userLocationIcon === icon.id ? 'bold' : 'normal', color: userLocationIcon === icon.id ? '#1d4ed8' : '#4b5563', textAlign: 'center' }}>
+                  <span className="icon-name">
                     {icon.name}
                   </span>
                 </div>
