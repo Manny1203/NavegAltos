@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Lock, LogIn, Download, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, LogIn, Download, Eye, EyeOff, Info, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
@@ -13,6 +13,23 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showNip, setShowNip] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  const [showInstitutionalWarning, setShowInstitutionalWarning] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const hasDismissed = localStorage.getItem('hide_institutional_warning');
+    if (!hasDismissed) {
+      setShowInstitutionalWarning(true);
+    }
+  }, []);
+
+  const handleCloseWarning = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('hide_institutional_warning', 'true');
+    }
+    setShowInstitutionalWarning(false);
+  };
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -247,6 +264,61 @@ export default function LoginPage() {
         © 2026 Universidad de Guadalajara<br/>
         Centro Universitario de los Altos
       </div>
+
+      {showInstitutionalWarning && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0, 48, 86, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white', padding: '24px', borderRadius: '20px',
+            width: '100%', maxWidth: '380px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+            position: 'relative', animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            <button 
+              onClick={handleCloseWarning}
+              style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: '#f3f4f6', border: 'none', borderRadius: '50%',
+                width: '28px', height: '28px', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                color: '#6b7280', transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#e5e7eb'; e.currentTarget.style.color = '#111827'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = '#6b7280'; }}
+            >
+              <X size={16} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#003056' }}>
+              <Info size={24} color="#E25E24" />
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Cuentas Institucionales</h3>
+            </div>
+            <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5', marginBottom: '20px' }}>
+              De momento, NavegAltos solo admite el inicio de sesión con cuentas de la Universidad de Guadalajara (ej. <strong style={{ color: '#003056' }}>@alumnos.udg.mx</strong>).
+              <br /><br />
+              Si no cuentas con una o solo quieres explorar, te sugerimos probar el <strong style={{ color: '#003056' }}>Modo Invitado</strong>.
+            </p>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#003056', fontWeight: '600', marginBottom: '20px', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#E25E24' }}
+              />
+              No volver a mostrar
+            </label>
+            <button 
+              onClick={handleCloseWarning}
+              className="auth-button"
+              style={{ margin: 0, width: '100%' }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
