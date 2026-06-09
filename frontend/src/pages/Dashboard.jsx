@@ -1703,12 +1703,14 @@ export default function Dashboard() {
               className="btn-primary-large"
               onClick={() => {
                 setGpsEnabled(true);
-                if (selectedPin.building === 'rectoria') {
+                if (selectedPin.map_id === 'rectoria') {
                   setDestinationPin({
                     ...selectedPin,
                     x: 53.957,
                     y: 68.560,
-                    building: null
+                    x_coordinate: 53.957,
+                    y_coordinate: 68.560,
+                    map_id: 'main'
                   });
                 } else {
                   setDestinationPin(selectedPin);
@@ -2020,7 +2022,18 @@ export default function Dashboard() {
                   setSelectedFloor(tempPin.floor || 'PB');
                 }
                 setGpsEnabled(true);
-                setDestinationPin(tempPin);
+                if (tempPin.map_id === 'rectoria') {
+                  setDestinationPin({
+                    ...tempPin,
+                    x: 53.957,
+                    y: 68.560,
+                    x_coordinate: 53.957,
+                    y_coordinate: 68.560,
+                    map_id: 'main'
+                  });
+                } else {
+                  setDestinationPin(tempPin);
+                }
                 setIsTraveling(true);
                 setIsTripBarMinimized(false);
                 setShowSharedPinModal(false);
