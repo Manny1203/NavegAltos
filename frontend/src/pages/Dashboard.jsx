@@ -1632,6 +1632,12 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {selectedPin.description && (
+            <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.5', marginTop: '12px', marginBottom: '0' }}>
+              {selectedPin.description}
+            </p>
+          )}
+
           <div className="sheet-stats">
             <div className="stat-box">
               <span className="stat-label">DISTANCIA</span>
