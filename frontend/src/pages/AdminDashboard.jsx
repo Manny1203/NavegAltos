@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [publicPins, setPublicPins] = useState([]);
   const [reports, setReports] = useState([]);
+  const [bugs, setBugs] = useState([]);
   const [historyTickets, setHistoryTickets] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +99,15 @@ export default function AdminDashboard() {
       .order('created_at', { ascending: false });
 
     if (!reportsError && reportsData) setReports(reportsData);
+
+    // Load System Bugs
+    const { data: bugsData, error: bugsError } = await supabase
+      .from('system_bugs')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (!bugsError && bugsData) setBugs(bugsData);
 
     // Load History Tickets
     const { data: histReqData } = await supabase
@@ -193,6 +203,12 @@ export default function AdminDashboard() {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
+  });
+
+  const filteredBugs = bugs.filter(bug => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return bug.description?.toLowerCase().includes(q) || bug.user_name?.toLowerCase().includes(q);
   });
 
   const handleDeletePin = async (pinId) => {
@@ -324,6 +340,25 @@ export default function AdminDashboard() {
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar el pin.');
+    }
+  };
+
+  const handleResolveBug = async (bugId) => {
+    try {
+      const { error } = await supabase
+        .from('system_bugs')
+        .update({ status: 'resolved' })
+        .eq('id', bugId);
+      if (error) {
+        console.error('Error al resolver bug:', error);
+        toast.error('Error al resolver bug: ' + error.message);
+        return;
+      }
+      toast.success('Bug marcado como resuelto.');
+      loadData();
+    } catch (e) {
+      console.error(e);
+      toast.error('Error inesperado: ' + e.message);
     }
   };
 
@@ -459,6 +494,14 @@ export default function AdminDashboard() {
               {reports.length > 0 && <span className="admin-badge">{reports.length}</span>}
             </button>
             <button
+              className={`admin-nav-item ${activeTab === 'bugs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('bugs')}
+            >
+              <AlertTriangle size={18} />
+              <span>Errores (Bugs)</span>
+              {bugs.length > 0 && <span className="admin-badge">{bugs.length}</span>}
+            </button>
+            <button
               className={`admin-nav-item ${activeTab === 'history' ? 'active' : ''}`}
               onClick={() => setActiveTab('history')}
             >
@@ -582,6 +625,33 @@ export default function AdminDashboard() {
                           setSelectedPin(pin);
                         }}>Ver Pin</button>
                         <button className="btn-approve" onClick={() => handleResolveReport(report)}>Resuelto</button>
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+
+              {activeTab === 'bugs' && (
+                filteredBugs.length === 0 ? (
+                  <p className="admin-empty">No hay errores reportados.</p>
+                ) : (
+                  filteredBugs.map(bug => (
+                    <div key={bug.id} className="admin-card">
+                      <div className="admin-card-header">
+                        <div className="admin-card-icon req-icon">
+                          <AlertTriangle size={14} color="#f59e0b" />
+                        </div>
+                        <div className="admin-card-title-group">
+                          <h5>Reporte de Sistema</h5>
+                          <span className="admin-date">{new Date(bug.created_at).toLocaleDateString('es-MX')}</span>
+                        </div>
+                      </div>
+                      <p className="admin-card-desc">
+                        <strong>Usuario:</strong> {bug.user_name || 'Desconocido'}<br />
+                        <strong>Descripción:</strong> {bug.description}
+                      </p>
+                      <div className="admin-card-actions">
+                        <button className="btn-approve" style={{ width: '100%' }} onClick={() => handleResolveBug(bug.id)}>Marcar como Resuelto</button>
                       </div>
                     </div>
                   ))

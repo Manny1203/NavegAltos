@@ -131,6 +131,10 @@ export default function Dashboard() {
 
   // Report Form State
   const [reportReason, setReportReason] = useState('');
+  
+  // Bug Report State
+  const [showBugReportModal, setShowBugReportModal] = useState(false);
+  const [bugDescription, setBugDescription] = useState('');
 
   const [userPins, setUserPins] = useState([]);
 
@@ -716,17 +720,31 @@ export default function Dashboard() {
 
               {/* Mi Perfil */}
               {currentUser && (
-                <button
-                  className="menu-sidebar-item"
-                  onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
-                  style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
-                >
-                  <User size={20} color="#3b82f6" />
-                  <div className="menu-item-text">
-                    <span className="menu-item-label">Mi Perfil</span>
-                    <span className="menu-item-desc">Foto, tema, NIP y más</span>
-                  </div>
-                </button>
+                <>
+                  <button
+                    className="menu-sidebar-item"
+                    onClick={() => { setShowProfile(true); setShowMenuSidebar(false); }}
+                    style={{ marginTop: isAdmin ? '0' : 'auto', marginBottom: '8px' }}
+                  >
+                    <User size={20} color="#3b82f6" />
+                    <div className="menu-item-text">
+                      <span className="menu-item-label">Mi Perfil</span>
+                      <span className="menu-item-desc">Foto, tema, NIP y más</span>
+                    </div>
+                  </button>
+                  
+                  <button
+                    className="menu-sidebar-item"
+                    onClick={() => { setShowBugReportModal(true); setShowMenuSidebar(false); }}
+                    style={{ marginBottom: '8px' }}
+                  >
+                    <AlertTriangle size={20} color="#f59e0b" />
+                    <div className="menu-item-text">
+                      <span className="menu-item-label">Reportar Error</span>
+                      <span className="menu-item-desc">Avísanos si algo falló en la app</span>
+                    </div>
+                  </button>
+                </>
               )}
 
               <button
@@ -2048,6 +2066,65 @@ export default function Dashboard() {
                 <Route size={16} /> Solo Iniciar Viaje
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BUG REPORT MODAL */}
+      {showBugReportModal && (
+        <div className="action-modal-overlay">
+          <div className="action-modal">
+            <button className="btn-close" onClick={() => { setShowBugReportModal(false); setBugDescription(''); }}>
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+            </button>
+            <div className="action-modal-header">
+              <AlertTriangle size={20} color="#f59e0b" />
+              <h3>Reportar un Error</h3>
+            </div>
+            <p className="action-modal-desc">
+              Por favor, describe detalladamente el error o problema que encontraste en la aplicación.
+            </p>
+
+            <div className="action-form-group">
+              <label>DESCRIPCIÓN DEL ERROR</label>
+              <textarea
+                className="auth-input"
+                placeholder="Ej. Al intentar buscar un pin en el edificio A, la pantalla se queda en blanco..."
+                value={bugDescription}
+                onChange={(e) => setBugDescription(e.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-modal-submit"
+              style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}
+              onClick={async () => {
+                if (!bugDescription.trim()) {
+                  toast.error('Por favor, escribe una descripción del error.');
+                  return;
+                }
+                try {
+                  const userName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Usuario Desconocido';
+                  const { error } = await supabase.from('system_bugs').insert([{
+                    user_id: currentUser.id,
+                    user_name: userName,
+                    description: bugDescription,
+                    status: 'pending'
+                  }]);
+                  if (error) throw error;
+                  toast.success('Reporte de error enviado exitosamente. ¡Gracias!');
+                  setShowBugReportModal(false);
+                  setBugDescription('');
+                } catch (err) {
+                  console.error('Error enviando bug:', err);
+                  toast.error('Hubo un error al enviar el reporte.');
+                }
+              }}
+            >
+              <AlertTriangle size={16} /> Enviar Reporte de Error
+            </button>
           </div>
         </div>
       )}
