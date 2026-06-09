@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -9,6 +9,11 @@ import {
   AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building, ChevronDown, ChevronUp
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
+import MakePublicModal from '../components/modals/MakePublicModal';
+import ReportPinModal from '../components/modals/ReportPinModal';
+import SharedPinReceptionModal from '../components/modals/SharedPinReceptionModal';
+import ConfirmDeletePinModal from '../components/modals/ConfirmDeletePinModal';
+import BugReportModal from '../components/modals/BugReportModal';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
 import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
@@ -120,21 +125,10 @@ export default function Dashboard() {
   // Confirm delete state
   const [pinToDelete, setPinToDelete] = useState(null);
 
-  // Make Public Form State
-  const [hasSchedule, setHasSchedule] = useState(false);
-  const [openTime, setOpenTime] = useState('');
-  const [closeTime, setCloseTime] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [pinDescription, setPinDescription] = useState('');
-  const [availableDays, setAvailableDays] = useState(['L', 'M', 'Mi', 'J', 'V']);
-  const [pinCategory, setPinCategory] = useState('Académico');
-
   // Report Form State
-  const [reportReason, setReportReason] = useState('');
   
   // Bug Report State
   const [showBugReportModal, setShowBugReportModal] = useState(false);
-  const [bugDescription, setBugDescription] = useState('');
 
   const [userPins, setUserPins] = useState([]);
 
@@ -382,6 +376,9 @@ export default function Dashboard() {
 
   const targetPin = isTraveling ? destinationPin : selectedPin;
 
+  // Dijkstra Cache
+  const cachedPathRef = useRef({ start: null, end: null, pathIds: null, graphVersion: 0 });
+
   // Route Calculation Effect
   useEffect(() => {
     if (!targetPin || !campusGraph.nodes.length) {
@@ -406,7 +403,25 @@ export default function Dashboard() {
     }
 
     if (startNode && endNode) {
-      const pathIds = findShortestPath(campusGraph.nodes, campusGraph.edges, startNode.id, endNode.id);
+      let pathIds = null;
+      if (
+        cachedPathRef.current.start === startNode.id &&
+        cachedPathRef.current.end === endNode.id &&
+        cachedPathRef.current.graphVersion === campusGraph.nodes.length
+      ) {
+        // Usa el cálculo guardado en memoria caché (Ahorra CPU y batería)
+        pathIds = cachedPathRef.current.pathIds;
+      } else {
+        // Calcula una nueva ruta si los nodos inicio/fin cambiaron
+        pathIds = findShortestPath(campusGraph.nodes, campusGraph.edges, startNode.id, endNode.id);
+        cachedPathRef.current = {
+          start: startNode.id,
+          end: endNode.id,
+          pathIds,
+          graphVersion: campusGraph.nodes.length
+        };
+      }
+
       if (pathIds) {
         const pathNodes = pathIds.map(id => campusGraph.nodes.find(n => n.id === id));
         setCurrentRoute(pathNodes);
@@ -1813,359 +1828,53 @@ export default function Dashboard() {
           )}
         </div>
       )}
-      {/* MAKE PUBLIC MODAL */}
-      {showMakePublicModal && (
-        <div className="action-modal-overlay">
-          <div className="action-modal">
-            <button className="btn-close" onClick={() => setShowMakePublicModal(false)}>
-              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-              </span>
-            </button>
+      <MakePublicModal
+        isOpen={showMakePublicModal}
+        onClose={() => setShowMakePublicModal(false)}
+        publicPinData={publicPinData}
+        currentUser={currentUser}
+        filters={filters}
+      />
 
-            <div className="action-modal-header">
-              <Globe size={20} color="#E25E24" />
-              <h3>Hacer Público</h3>
-            </div>
-            <p className="action-modal-desc">
-              Manda este pin a revisión para que todos puedan verlo en el mapa principal.
-            </p>
+      <ReportPinModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportPinData={reportPinData}
+        selectedPin={selectedPin}
+        currentUser={currentUser}
+      />
 
-            <label className="checkbox-group">
-              <input
-                type="checkbox"
-                checked={hasSchedule}
-                onChange={(e) => setHasSchedule(e.target.checked)}
-              />
-              ¿Tiene horario de disponibilidad?
-            </label>
+      <SharedPinReceptionModal
+        isOpen={showSharedPinModal}
+        onClose={() => { setShowSharedPinModal(false); setSharedPinData(null); }}
+        sharedPinData={sharedPinData}
+        currentUser={currentUser}
+        fetchPins={fetchPins}
+        setCurrentBuilding={setCurrentBuilding}
+        setSelectedFloor={setSelectedFloor}
+        setGpsEnabled={setGpsEnabled}
+        setDestinationPin={setDestinationPin}
+        setIsTraveling={setIsTraveling}
+        setIsTripBarMinimized={setIsTripBarMinimized}
+      />
 
-            {hasSchedule && (
-              <div className="time-inputs" style={{ marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: '4px' }}>HORA DE APERTURA</label>
-                  <input type="time" className="auth-input" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: '4px' }}>HORA DE CIERRE</label>
-                  <input type="time" className="auth-input" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
-                </div>
-              </div>
-            )}
+      <BugReportModal
+        isOpen={showBugReportModal}
+        onClose={() => setShowBugReportModal(false)}
+        currentUser={currentUser}
+      />
 
-            <div className="action-form-group">
-              <label>¿A QUIÉN LE PERTENECE?</label>
-              <input type="text" className="auth-input" placeholder="Ej. Club de Robótica" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
-            </div>
-
-            <div className="action-form-group">
-              <label>DESCRIPCIÓN (Opcional)</label>
-              <textarea
-                className="auth-input"
-                placeholder="Agrega notas o detalles sobre el pin"
-                value={pinDescription}
-                onChange={(e) => setPinDescription(e.target.value)}
-                style={{ height: '60px', resize: 'none' }}
-              />
-            </div>
-
-            <div className="action-form-group">
-              <label>DÍAS DISPONIBLE</label>
-              <div className="days-selector">
-                {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map(day => (
-                  <button
-                    key={day}
-                    className={`day-btn ${availableDays.includes(day) ? 'active' : ''}`}
-                    onClick={() => setAvailableDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="action-form-group">
-              <label>CATEGORÍA</label>
-              <select className="auth-input" style={{ fontFamily: "'Inter', sans-serif" }} value={pinCategory} onChange={(e) => setPinCategory(e.target.value)}>
-                <option value="" disabled>Selecciona una categoría</option>
-                {filters.map(f => (
-                  <option key={f.id} value={f.id}>{f.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <button className="btn-modal-submit btn-public-submit" onClick={async () => {
-              if (!pinCategory) {
-                toast.error('Por favor, selecciona una categoría para el pin.');
-                return;
-              }
-
-              if (!ownerName) {
-                toast.error('Por favor, indica a quién le pertenece este pin.');
-                return;
-              }
-
-              if (!currentUser || !publicPinData) {
-                toast.error('Error de sesión o pin no seleccionado.');
-                return;
-              }
-
-              try {
-                const requestData = {
-                  pin_id: publicPinData.id,
-                  requester_id: currentUser.id,
-                  requester_name: ownerName,
-                  description: pinDescription,
-                  request_reason: 'Solicitud para hacer el pin público.',
-                  has_schedule: hasSchedule,
-                  open_time: openTime || null,
-                  close_time: closeTime || null,
-                  available_days: availableDays,
-                  status: 'pending'
-                };
-
-                const { error } = await supabase.from('pin_requests').insert([requestData]);
-
-                if (error) throw error;
-
-                toast.success('Solicitud enviada a revision. En breve revisamos tu pin.');
-                setShowMakePublicModal(false);
-                setOwnerName('');
-                setPinDescription('');
-                setHasSchedule(false);
-              } catch (e) {
-                console.error("Error pidiendo pin público: ", e);
-                toast.error('Hubo un error al enviar la solicitud.');
-              }
-            }}>
-              <Globe size={16} /> Enviar Solicitud
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* REPORT PIN MODAL */}
-      {showReportModal && (
-        <div className="action-modal-overlay">
-          <div className="action-modal">
-            <button className="btn-close" onClick={() => setShowReportModal(false)}>
-              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-              </span>
-            </button>
-            <div className="action-modal-header">
-              <AlertTriangle size={20} color="#cf1010" />
-              <h3>Reportar Pin</h3>
-            </div>
-            <p className="action-modal-desc">
-              Ayúdanos a mantener el mapa limpio. Cuéntanos por qué este pin es innecesario o incorrecto.
-            </p>
-            <div className="action-form-group">
-              <label>RAZÓN DEL REPORTE</label>
-              <textarea
-                className="auth-input"
-                placeholder="Escribe los detalles aquí..."
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-              />
-            </div>
-            <button className="btn-modal-submit btn-report-submit" onClick={async () => {
-              if (!reportReason.trim()) {
-                toast.error('Por favor, escribe una razón para el reporte.');
-                return;
-              }
-              try {
-                const { error } = await supabase.from('pin_reports').insert([{
-                  pin_id: reportPinData?.id || selectedPin?.id,
-                  reporter_id: currentUser?.id || null,
-                  reason: reportReason.trim(),
-                  status: 'pending'
-                }]);
-                if (error) throw error;
-                toast.success('Reporte enviado. Gracias por tu ayuda.');
-                setShowReportModal(false);
-                setReportReason('');
-              } catch (e) {
-                console.error('Error enviando reporte:', e);
-                toast.error('Hubo un error al enviar el reporte. Inténtalo de nuevo.');
-              }
-            }}>
-              <AlertTriangle size={16} /> Enviar Reporte
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* SHARED PIN RECEPTION MODAL */}
-      {showSharedPinModal && sharedPinData && (
-        <div className="action-modal-overlay">
-          <div className="action-modal">
-            <button className="btn-close" onClick={() => { setShowSharedPinModal(false); setSharedPinData(null); }}>
-              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-              </span>
-            </button>
-            <div className="action-modal-header">
-              <Share2 size={20} color="#3b82f6" />
-              <h3>Pin Compartido</h3>
-            </div>
-            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
-              Alguien te ha compartido el pin privado: <strong>{sharedPinData.name}</strong>.
-              <br /><br />¿Qué deseas hacer con él?
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button className="btn-modal-submit btn-success-submit" onClick={async () => {
-                if (!currentUser) {
-                  toast.error('Debes iniciar sesión para guardar el pin en tu cuenta.');
-                  return;
-                }
-                const { id, created_at, updated_at, owner, has_schedule, open_time, close_time, available_days, entrance_node_id, ...restOfPin } = sharedPinData;
-                const newPin = {
-                  ...restOfPin,
-                  user_id: currentUser.id,
-                  is_public: false
-                };
-                const { error } = await supabase.from('pins').insert([newPin]);
-                if (error) {
-                  toast.error('Error al guardar el pin: ' + error.message);
-                  console.error('Error insertando pin clonado:', error);
-                } else {
-                  toast.success('Pin guardado en tu cuenta exitosamente.');
-                  fetchPins();
-                  setShowSharedPinModal(false);
-                  setSharedPinData(null);
-                }
-              }}>
-                Guardar en Mis Pines
-              </button>
-
-              <button className="btn-modal-submit" style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0ea5e9' }} onClick={() => {
-                const tempPin = { ...sharedPinData, id: 'temp-' + Date.now() };
-                if (tempPin.map_id && tempPin.map_id !== 'main') {
-                  setCurrentBuilding(tempPin.map_id);
-                  setSelectedFloor(tempPin.floor || 'PB');
-                }
-                setGpsEnabled(true);
-                if (tempPin.map_id === 'rectoria') {
-                  setDestinationPin({
-                    ...tempPin,
-                    x: 53.957,
-                    y: 68.560,
-                    x_coordinate: 53.957,
-                    y_coordinate: 68.560,
-                    map_id: 'main'
-                  });
-                } else {
-                  setDestinationPin(tempPin);
-                }
-                setIsTraveling(true);
-                setIsTripBarMinimized(false);
-                setShowSharedPinModal(false);
-                setSharedPinData(null);
-              }}>
-                <Route size={16} /> Solo Iniciar Viaje
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* BUG REPORT MODAL */}
-      {showBugReportModal && (
-        <div className="action-modal-overlay">
-          <div className="action-modal">
-            <button className="btn-close" onClick={() => { setShowBugReportModal(false); setBugDescription(''); }}>
-              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-              </span>
-            </button>
-            <div className="action-modal-header">
-              <AlertTriangle size={20} color="#f59e0b" />
-              <h3>Reportar un Error</h3>
-            </div>
-            <p className="action-modal-desc">
-              Por favor, describe detalladamente el error o problema que encontraste en la aplicación.
-            </p>
-
-            <div className="action-form-group">
-              <label>DESCRIPCIÓN DEL ERROR</label>
-              <textarea
-                className="auth-input"
-                placeholder="Ej. Al intentar buscar un pin en el edificio A, la pantalla se queda en blanco..."
-                value={bugDescription}
-                onChange={(e) => setBugDescription(e.target.value)}
-              />
-            </div>
-
-            <button
-              className="btn-modal-submit"
-              style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}
-              onClick={async () => {
-                if (!bugDescription.trim()) {
-                  toast.error('Por favor, escribe una descripción del error.');
-                  return;
-                }
-                try {
-                  const userName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Usuario Desconocido';
-                  const { error } = await supabase.from('system_bugs').insert([{
-                    user_id: currentUser.id,
-                    user_name: userName,
-                    description: bugDescription,
-                    status: 'pending'
-                  }]);
-                  if (error) throw error;
-                  toast.success('Reporte de error enviado exitosamente. ¡Gracias!');
-                  setShowBugReportModal(false);
-                  setBugDescription('');
-                } catch (err) {
-                  console.error('Error enviando bug:', err);
-                  toast.error('Hubo un error al enviar el reporte.');
-                }
-              }}
-            >
-              <AlertTriangle size={16} /> Enviar Reporte de Error
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* CONFIRM DELETE PIN MODAL */}
-      {pinToDelete && (
-        <div className="action-modal-overlay">
-          <div className="action-modal" style={{ maxWidth: '340px' }}>
-            <div className="action-modal-header" style={{ color: '#ef4444' }}>
-              <Trash2 size={20} color="#ef4444" />
-              <h3 style={{ color: '#ef4444' }}>Borrar Pin</h3>
-            </div>
-            <p className="action-modal-desc" style={{ marginBottom: '20px' }}>
-              ¿Seguro que quieres borrar <strong>{pinToDelete.name || 'este pin'}</strong>? Esta acción no se puede deshacer.
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                className="btn-modal-submit"
-                style={{ flex: 1, background: 'rgba(107,114,128,0.1)', color: 'var(--text-muted)' }}
-                onClick={() => setPinToDelete(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="btn-modal-submit"
-                style={{ flex: 1, background: '#ef4444', color: 'white' }}
-                onClick={async () => {
-                  await supabase.from('pins').delete().eq('id', pinToDelete.id);
-                  setUserPins(prev => prev.filter(p => p.id !== pinToDelete.id));
-                  setSelectedPin(null);
-                  setPinToDelete(null);
-                  toast.success('Pin eliminado correctamente.');
-                }}
-              >
-                <Trash2 size={14} /> Sí, borrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <ConfirmDeletePinModal
+        pin={pinToDelete}
+        onClose={() => setPinToDelete(null)}
+        fetchPins={fetchPins}
+        onPinDeleted={() => {
+          if (selectedPin?.id === pinToDelete?.id) {
+            setSelectedPin(null);
+          }
+        }}
+      />
     </div>
   );
 }
+
