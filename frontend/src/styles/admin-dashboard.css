@@ -587,3 +587,30 @@ body.dark .day-btn.active {
 body.dark .admin-color-circle.selected {
   border-color: #f9fafb;
 }
+
+/* Override for Rectoria modal in Admin panel to avoid sidebar overlap */
+.admin-rectoria-modal {
+  position: absolute !important;
+  top: 2% !important;
+  left: 2% !important;
+  width: 96% !important;
+  height: 96% !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-sidebar-open .admin-rectoria-modal {
+  left: calc(320px + 2%) !important;
+  width: calc(100% - 320px - 4%) !important;
+}
+
+.admin-zen-mode .admin-rectoria-modal {
+  left: 2% !important;
+  width: 96% !important;
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar-open .admin-rectoria-modal {
+    left: 2% !important;
+    width: 96% !important;
+  }
+}

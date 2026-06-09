@@ -405,7 +405,7 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      <div className="admin-content-wrapper">
+      <div className={`admin-content-wrapper ${isSidebarOpen ? 'admin-sidebar-open' : ''} ${isZenMode ? 'admin-zen-mode' : ''}`}>
         {/* Mobile Overlay */}
         {isSidebarOpen && window.innerWidth <= 768 && (
           <div 
@@ -717,7 +717,7 @@ export default function AdminDashboard() {
 
           {/* RECTORIA MODAL / OVERLAY FOR ADMINS */}
           {currentBuilding === 'rectoria' && (
-            <div className="rectoria-modal" style={{ position: 'absolute', top: '2%', left: '2%', width: '96%', height: '96%' }}>
+            <div className="rectoria-modal admin-rectoria-modal">
               {/* Header */}
               <div className="rectoria-header">
                 <div>
