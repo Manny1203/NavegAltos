@@ -141,7 +141,8 @@ export default function AdminDashboard() {
         has_schedule: request.has_schedule || false,
         open_time: request.open_time || null,
         close_time: request.close_time || null,
-        available_days: request.available_days || null
+        available_days: request.available_days || null,
+        expires_at: request.expires_at || null
       }).eq('id', request.pin_id);
       if (pinError) throw pinError;
 
@@ -560,6 +561,15 @@ export default function AdminDashboard() {
                             </span>
                             <span style={{ fontSize: '12px', color: '#334155', fontWeight: 'bold' }}>{req.requester_name || 'Desconocido'}</span>
                           </div>
+
+                          {req.expires_at && (
+                            <div style={{ marginBottom: '8px', background: '#fef2f2', padding: '6px', borderRadius: '4px', border: '1px solid #fee2e2' }}>
+                              <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 'bold', display: 'block' }}>EVENTO TEMPORAL (CADUCA EL)</span>
+                              <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 'bold' }}>
+                                {new Date(req.expires_at).toLocaleDateString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          )}
 
                           {req.has_schedule ? (
                             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>

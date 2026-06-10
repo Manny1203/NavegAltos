@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Fuse from 'fuse.js';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -6,7 +7,7 @@ import { calculateAffineCoefficients, transformCoordinates, findShortestPath, fi
 import {
   Menu, Search, Plus, Map as MapIcon, Globe, Lock, X,
   MapPin, BookOpen, Coffee, Car, Microscope, Clock, Route,
-  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building, ChevronDown, ChevronUp
+  AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building, ChevronDown, ChevronUp, Heart
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
 import MakePublicModal from '../components/modals/MakePublicModal';
@@ -486,6 +487,26 @@ export default function Dashboard() {
     }
   };
 
+  const [userFavorites, setUserFavorites] = useState([]);
+
+  const fetchFavorites = async () => {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await supabase.from('user_favorites').select('pin_id').eq('user_id', currentUser.id);
+      if (!error && data) {
+        setUserFavorites(data.map(f => f.pin_id));
+      }
+    } catch (e) {
+      console.error('Error fetching favorites:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchFavorites();
+    }
+  }, [currentUser]);
+
 
   // Logout handler
   const handleLogout = async () => {
@@ -520,7 +541,13 @@ export default function Dashboard() {
     }
   };
 
-  const displayedPins = userPins.filter(pin => {
+  let displayedPins = userPins.filter(pin => {
+    // 1. Expiration Check
+    if (pin.expires_at && new Date(pin.expires_at) < new Date()) {
+      return false; // Pin has expired
+    }
+
+    // 2. Building/Floor Check
     const pinMap = pin.map_id || 'main';
     let isCorrectMap = false;
     if (currentBuilding) {
@@ -528,14 +555,17 @@ export default function Dashboard() {
     } else {
       isCorrectMap = (pinMap === 'main');
     }
-    if (!isCorrectMap) return false;
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
-    }
-    return true;
+    return isCorrectMap;
   });
+
+  if (searchQuery) {
+    const fuse = new Fuse(displayedPins, {
+      keys: ['name', 'category', 'description'],
+      threshold: 0.4,
+      ignoreLocation: true
+    });
+    displayedPins = fuse.search(searchQuery).map(result => result.item);
+  }
 
   const filters = [
     { id: 'canchas', label: 'Canchas' },
@@ -589,6 +619,21 @@ export default function Dashboard() {
       case 'more-horizontal': return <MoreHorizontal color={color} />;
       case 'help-circle': return <MoreHorizontal color={color} />; // Fallback para pines existentes
       default: return <MapPin color={color} />;
+    }
+  };
+
+  const toggleFavorite = async (pinId) => {
+    if (!currentUser) {
+      toast.error('Debes iniciar sesión para guardar favoritos.');
+      return;
+    }
+    const isFav = userFavorites.includes(pinId);
+    if (isFav) {
+      setUserFavorites(prev => prev.filter(id => id !== pinId));
+      await supabase.from('user_favorites').delete().eq('user_id', currentUser.id).eq('pin_id', pinId);
+    } else {
+      setUserFavorites(prev => [...prev, pinId]);
+      await supabase.from('user_favorites').insert([{ user_id: currentUser.id, pin_id: pinId }]);
     }
   };
 
@@ -1127,6 +1172,9 @@ export default function Dashboard() {
           onLogout={handleLogout}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
+          userPins={userPins}
+          userFavorites={userFavorites}
+          setSelectedPin={setSelectedPin}
         />
       )}
 
@@ -1642,7 +1690,6 @@ export default function Dashboard() {
             </span>
           </button>
 
-          {/* Share Button (Top Right) */}
           <button
             className="share-sheet-btn"
             onClick={() => handleSharePin(selectedPin)}
@@ -1652,7 +1699,21 @@ export default function Dashboard() {
           </button>
 
           <div className="sheet-header">
-            <h3>{selectedPin.name}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h3 style={{ margin: 0 }}>{selectedPin.name}</h3>
+              <button
+                onClick={() => toggleFavorite(selectedPin.id)}
+                title="Añadir a Favoritos"
+                style={{
+                  width: '28px', height: '28px', background: 'transparent', 
+                  color: userFavorites.includes(selectedPin.id) ? '#ef4444' : '#64748b',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
+                  flexShrink: 0, padding: 0
+                }}
+              >
+                <Heart size={16} fill={userFavorites.includes(selectedPin.id) ? '#ef4444' : 'none'} />
+              </button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
               <span className="sheet-subtitle" style={{ margin: 0 }}>
                 {selectedPin.category ? selectedPin.category.toUpperCase() : 'SIN CATEGORÍA'}
@@ -1706,13 +1767,6 @@ export default function Dashboard() {
               <>
                 <button className="btn-secondary btn-public" onClick={() => {
                   setPublicPinData(selectedPin);
-                  setOwnerName('');
-                  setPinDescription('');
-                  setHasSchedule(false);
-                  setOpenTime('08:00');
-                  setCloseTime('18:00');
-                  setAvailableDays([]);
-                  setPinCategory('');
                   setShowMakePublicModal(true);
                   setSelectedPin(null);
                 }}>

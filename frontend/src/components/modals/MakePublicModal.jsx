@@ -11,6 +11,11 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
   const [pinDescription, setPinDescription] = useState('');
   const [availableDays, setAvailableDays] = useState(['L', 'M', 'Mi', 'J', 'V']);
   const [pinCategory, setPinCategory] = useState('Académico');
+  const [isTemporary, setIsTemporary] = useState(false);
+  const [expireDay, setExpireDay] = useState('');
+  const [expireMonth, setExpireMonth] = useState('');
+  const [expireYear, setExpireYear] = useState(new Date().getFullYear().toString());
+  const [expireTime, setExpireTime] = useState('');
 
   if (!isOpen) return null;
 
@@ -23,6 +28,45 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
     if (!ownerName) {
       toast.error('Por favor, indica a quién le pertenece este pin.');
       return;
+    }
+
+    let finalExpiresAt = null;
+
+    if (isTemporary) {
+      if (!expireDay || !expireMonth || !expireYear || !expireTime) {
+        toast.error('Por favor, completa todos los campos de la fecha y hora de caducidad.');
+        return;
+      }
+      
+      const day = parseInt(expireDay);
+      const month = parseInt(expireMonth);
+      const year = parseInt(expireYear);
+      
+      if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2024) {
+        toast.error('La fecha ingresada no es válida.');
+        return;
+      }
+      
+      // format to ISO string properly handling timezone
+      // expireTime is HH:mm
+      const formattedMonth = month.toString().padStart(2, '0');
+      const formattedDay = day.toString().padStart(2, '0');
+      const dateStr = `${year}-${formattedMonth}-${formattedDay}T${expireTime}:00`;
+      
+      try {
+        const parsedDate = new Date(dateStr);
+        if (isNaN(parsedDate.getTime())) throw new Error("Invalid date");
+        
+        if (parsedDate < new Date()) {
+          toast.error('La fecha de caducidad no puede estar en el pasado.');
+          return;
+        }
+
+        finalExpiresAt = parsedDate.toISOString();
+      } catch (err) {
+        toast.error('La fecha/hora ingresada no es válida.');
+        return;
+      }
     }
 
     if (!currentUser || !publicPinData) {
@@ -41,14 +85,15 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
         open_time: openTime || null,
         close_time: closeTime || null,
         available_days: availableDays,
-        status: 'pending'
+        status: 'pending',
+        expires_at: finalExpiresAt
       };
 
       const { error } = await supabase.from('pin_requests').insert([requestData]);
 
       if (error) throw error;
 
-      toast.success('Solicitud enviada a revision. En breve revisamos tu pin.');
+      toast.success('Solicitud enviada a revisión. En breve revisamos tu pin.');
       
       // Reset state on success
       setOwnerName('');
@@ -58,6 +103,11 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
       setCloseTime('');
       setAvailableDays(['L', 'M', 'Mi', 'J', 'V']);
       setPinCategory('Académico');
+      setIsTemporary(false);
+      setExpireDay('');
+      setExpireMonth('');
+      setExpireYear(new Date().getFullYear().toString());
+      setExpireTime('');
       
       onClose();
     } catch (e) {
@@ -83,14 +133,20 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
           Manda este pin a revisión para que todos puedan verlo en el mapa principal.
         </p>
 
-        <label className="checkbox-group">
-          <input
-            type="checkbox"
-            checked={hasSchedule}
-            onChange={(e) => setHasSchedule(e.target.checked)}
-          />
-          ¿Tiene horario de disponibilidad?
-        </label>
+        <div className="action-form-group">
+          <label>¿TIENE HORARIO DE DISPONIBILIDAD?</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontSize: '14px', fontWeight: '500' }}>
+            <input
+              type="checkbox"
+              checked={hasSchedule}
+              onChange={(e) => setHasSchedule(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: '#E25E24', cursor: 'pointer' }}
+            />
+            <span style={{ cursor: 'pointer' }} onClick={() => setHasSchedule(!hasSchedule)}>
+              Sí, tiene horario definido
+            </span>
+          </div>
+        </div>
 
         {hasSchedule && (
           <div className="time-inputs" style={{ marginBottom: '16px' }}>
@@ -104,6 +160,64 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
             </div>
           </div>
         )}
+
+        <div className="action-form-group">
+          <label>¿ES UN EVENTO TEMPORAL?</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+            <input 
+              type="checkbox" 
+              checked={isTemporary} 
+              onChange={(e) => setIsTemporary(e.target.checked)} 
+              style={{ width: '16px', height: '16px', accentColor: '#E25E24', cursor: 'pointer' }}
+            />
+            <span style={{ cursor: 'pointer' }} onClick={() => setIsTemporary(!isTemporary)}>
+              Sí, este pin caducará automáticamente
+            </span>
+          </div>
+          {isTemporary && (
+            <div style={{ marginTop: '12px' }}>
+              <label style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: '4px' }}>FECHA Y HORA DE CADUCIDAD</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  type="number" 
+                  className="auth-input" 
+                  placeholder="Día (DD)" 
+                  min="1" max="31"
+                  style={{ flex: 1, padding: '8px', textAlign: 'center' }}
+                  value={expireDay} 
+                  onChange={(e) => setExpireDay(e.target.value)} 
+                />
+                <input 
+                  type="number" 
+                  className="auth-input" 
+                  placeholder="Mes (MM)" 
+                  min="1" max="12"
+                  style={{ flex: 1, padding: '8px', textAlign: 'center' }}
+                  value={expireMonth} 
+                  onChange={(e) => setExpireMonth(e.target.value)} 
+                />
+                <input 
+                  type="number" 
+                  className="auth-input" 
+                  placeholder="Año" 
+                  min="2024" max="2100"
+                  style={{ flex: 1, padding: '8px', textAlign: 'center' }}
+                  value={expireYear} 
+                  onChange={(e) => setExpireYear(e.target.value)} 
+                />
+              </div>
+              <div style={{ marginTop: '8px' }}>
+                <input 
+                  type="time" 
+                  className="auth-input" 
+                  style={{ width: '100%', padding: '8px' }}
+                  value={expireTime} 
+                  onChange={(e) => setExpireTime(e.target.value)} 
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="action-form-group">
           <label>¿A QUIÉN LE PERTENECE?</label>

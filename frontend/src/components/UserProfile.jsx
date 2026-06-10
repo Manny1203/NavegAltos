@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { X, Camera, Lock, Sun, Moon, Trash2, User, LogOut, BookOpen, Check } from 'lucide-react';
+import { X, Camera, Lock, Sun, Moon, Trash2, User, LogOut, BookOpen, Check, Heart, MapPin } from 'lucide-react';
 
-export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }) {
+export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode, userPins, userFavorites = [], setSelectedPin }) {
   const [session, setSession] = useState(null);
   const [fullName, setFullName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -200,6 +200,43 @@ export default function UserProfile({ onClose, onLogout, darkMode, setDarkMode }
                   <div style={{ fontSize: 10, color: textSub, fontWeight: 600 }}>{s.label}</div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Mis Favoritos */}
+          <div style={{ background: bgCard, borderRadius: 12, padding: '14px 16px', border: `1px solid ${border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Heart size={16} color="#ef4444" fill="#ef4444" />
+              <span style={{ fontWeight: 700, fontSize: 13, color: text }}>Mis Favoritos</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {userFavorites.length === 0 ? (
+                <p style={{ fontSize: 12, color: textSub, fontStyle: 'italic', margin: 0 }}>No tienes pines favoritos aún.</p>
+              ) : (
+                userPins?.filter(p => userFavorites.includes(p.id)).map(pin => (
+                  <div 
+                    key={pin.id} 
+                    onClick={() => {
+                      if (setSelectedPin) {
+                        setSelectedPin(pin);
+                        onClose();
+                      }
+                    }}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px', 
+                      background: inputBg, borderRadius: 8, cursor: 'pointer', border: `1px solid ${border}`
+                    }}
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: pin.color || '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MapPin size={16} color="white" />
+                    </div>
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pin.name}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: textSub }}>{pin.category || 'Pin'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
