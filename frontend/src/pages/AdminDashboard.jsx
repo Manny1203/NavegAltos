@@ -151,7 +151,7 @@ export default function AdminDashboard() {
         message,
         type
       }]);
-    } catch(e) { console.error('Error notifying user', e); }
+    } catch (e) { console.error('Error notifying user', e); }
   };
 
   const handleApprove = async (request) => {
@@ -185,11 +185,15 @@ export default function AdminDashboard() {
   };
 
   const handleReject = async (request) => {
+    const reason = window.prompt("Escribe el motivo del rechazo (opcional):", "No cumple con las normas de la comunidad");
+    if (reason === null) return;
+
     try {
       const { error } = await supabase.from('pin_requests').update({ status: 'rejected' }).eq('id', request.id);
       if (error) throw error;
 
-      await notifyUser(request.requester_id, '❌ Solicitud Rechazada', `Tu solicitud para hacer público el pin '${request.pins?.name}' fue rechazada.`, 'request_rejected');
+      const messageText = `Tu solicitud para hacer público el pin '${request.pins?.name}' fue rechazada.${reason ? ` Motivo: ${reason}` : ''}`;
+      await notifyUser(request.requester_id, '❌ Solicitud Rechazada', messageText, 'request_rejected');
 
       toast.success('Solicitud rechazada. El pin sigue siendo privado.');
       loadData();
@@ -201,7 +205,7 @@ export default function AdminDashboard() {
 
   const displayedPins = publicPins.filter(pin => {
     if (pin.expires_at && new Date(pin.expires_at) < new Date()) return false;
-    
+
     let pinMap = pin.map_id || 'main';
     let isCorrectMap = false;
     if (currentBuilding) {
@@ -210,7 +214,7 @@ export default function AdminDashboard() {
       isCorrectMap = (pinMap === 'main');
     }
     if (!isCorrectMap) return false;
-    
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
@@ -406,9 +410,9 @@ export default function AdminDashboard() {
         toast.error('Error al resolver: ' + (error.message || JSON.stringify(error)));
         return;
       }
-      
+
       await notifyUser(report.reporter_id, 'Reporte Resuelto', `Un administrador ha resuelto tu reporte sobre el pin '${report.pins?.name}'.`, 'report_resolved');
-      
+
       console.log('Reporte resuelto:', data);
       toast.success('Reporte marcado como resuelto.');
       loadData();
@@ -478,7 +482,7 @@ export default function AdminDashboard() {
       <div className={`admin-content-wrapper ${isSidebarOpen ? 'admin-sidebar-open' : ''} ${isZenMode ? 'admin-zen-mode' : ''}`}>
         {/* Mobile Overlay */}
         {isSidebarOpen && window.innerWidth <= 768 && (
-          <div 
+          <div
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.3)', zIndex: 40 }}
             onClick={() => setIsSidebarOpen(false)}
           />
@@ -492,7 +496,7 @@ export default function AdminDashboard() {
             </button>
           </div>
         )}
-        
+
         {/* Left Sidebar */}
         <div
           className="admin-sidebar"
@@ -554,9 +558,9 @@ export default function AdminDashboard() {
 
             <div className="admin-search">
               <Search size={16} color="#9ca3af" />
-              <input 
-                type="text" 
-                placeholder="Buscar..." 
+              <input
+                type="text"
+                placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -936,7 +940,7 @@ export default function AdminDashboard() {
                 De: {selectedPin.owner}
               </span>
             )}
-            
+
             {selectedPin.description && (
               <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.5', marginTop: '12px', marginBottom: '0' }}>
                 {selectedPin.description}

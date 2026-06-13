@@ -1714,36 +1714,44 @@ export default function Dashboard() {
       {/* Pin Details Modal (Bottom Sheet) */}
       {selectedPin && !isTraveling && (
         <div className="pin-details-sheet" style={{ zIndex: 1000 }}>
-          <button className="close-sheet-btn" onClick={() => setSelectedPin(null)}>
-            <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-              <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
-            </span>
-          </button>
+          <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '2px', alignItems: 'center' }}>
+            <button
+              onClick={() => toggleFavorite(selectedPin.id)}
+              title="Añadir a Favoritos"
+              style={{
+                width: '32px', height: '32px', background: 'transparent', 
+                color: userFavorites.includes(selectedPin.id) ? '#ef4444' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
+                transition: 'all 0.2s', borderRadius: '50%'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = 'var(--text-main)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = userFavorites.includes(selectedPin.id) ? '#ef4444' : 'var(--text-muted)'; }}
+            >
+              <Heart size={16} fill={userFavorites.includes(selectedPin.id) ? '#ef4444' : 'none'} />
+            </button>
 
-          <button
-            className="share-sheet-btn"
-            onClick={() => handleSharePin(selectedPin)}
-            title="Compartir Pin"
-          >
-            <Share2 size={14} />
-          </button>
+            <button
+              className="share-sheet-btn"
+              style={{ position: 'relative', top: 'auto', right: 'auto', width: '32px', height: '32px' }}
+              onClick={() => handleSharePin(selectedPin)}
+              title="Compartir Pin"
+            >
+              <Share2 size={14} />
+            </button>
+
+            <button 
+              className="close-sheet-btn" 
+              style={{ position: 'relative', top: 'auto', right: 'auto', width: '32px', height: '32px' }}
+              onClick={() => setSelectedPin(null)}
+            >
+              <span style={{ display: 'flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} style={{ display: 'block', width: '16px', height: '16px' }} />
+              </span>
+            </button>
+          </div>
 
           <div className="sheet-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h3 style={{ margin: 0 }}>{selectedPin.name}</h3>
-              <button
-                onClick={() => toggleFavorite(selectedPin.id)}
-                title="Añadir a Favoritos"
-                style={{
-                  width: '28px', height: '28px', background: 'transparent', 
-                  color: userFavorites.includes(selectedPin.id) ? '#ef4444' : '#64748b',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none',
-                  flexShrink: 0, padding: 0
-                }}
-              >
-                <Heart size={16} fill={userFavorites.includes(selectedPin.id) ? '#ef4444' : 'none'} />
-              </button>
-            </div>
+            <h3 style={{ margin: 0, paddingRight: '100px', lineHeight: '1.2' }}>{selectedPin.name}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
               <span className="sheet-subtitle" style={{ margin: 0 }}>
                 {selectedPin.category ? selectedPin.category.toUpperCase() : 'SIN CATEGORÍA'}
