@@ -21,6 +21,24 @@ export default function ReportPinModal({ isOpen, onClose, reportPinData, selecte
         status: 'pending'
       }]);
       if (error) throw error;
+
+      // Notificar a admins
+      const { data: admins } = await supabase.from('admin_users').select('user_id');
+      if (admins && admins.length > 0) {
+        const pinName = reportPinData?.name || selectedPin?.name || 'desconocido';
+        const notifications = admins.map(admin => ({
+          user_id: admin.user_id,
+          title: 'Nuevo Reporte',
+          message: `Un usuario ha reportado el pin '${pinName}'.`,
+          type: 'new_report'
+        }));
+        try {
+          await supabase.from('notifications').insert(notifications);
+        } catch (err) {
+          console.error("Error sending admin notifications:", err);
+        }
+      }
+
       toast.success('Reporte enviado. Gracias por tu ayuda.');
       setReportReason('');
       onClose();

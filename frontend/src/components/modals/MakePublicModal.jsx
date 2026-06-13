@@ -93,6 +93,23 @@ export default function MakePublicModal({ isOpen, onClose, publicPinData, curren
 
       if (error) throw error;
 
+      // Notificar a los administradores
+      const { data: admins } = await supabase.from('admin_users').select('user_id');
+      if (admins && admins.length > 0) {
+        const notifications = admins.map(admin => ({
+          user_id: admin.user_id,
+          title: 'Nueva Solicitud',
+          message: `El usuario ${ownerName} quiere hacer público el pin '${publicPinData.name}'.`,
+          type: 'new_request'
+        }));
+        // We use try-catch here so that if it fails it doesn't break the user experience
+        try {
+          await supabase.from('notifications').insert(notifications);
+        } catch (err) {
+          console.error("Error sending admin notifications:", err);
+        }
+      }
+
       toast.success('Solicitud enviada a revisión. En breve revisamos tu pin.');
       
       // Reset state on success

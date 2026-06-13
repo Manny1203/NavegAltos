@@ -22,6 +22,23 @@ export default function BugReportModal({ isOpen, onClose, currentUser }) {
         status: 'pending'
       }]);
       if (error) throw error;
+
+      // Notificar a admins
+      const { data: admins } = await supabase.from('admin_users').select('user_id');
+      if (admins && admins.length > 0) {
+        const notifications = admins.map(admin => ({
+          user_id: admin.user_id,
+          title: 'Reporte de Sistema',
+          message: `El usuario ${userName} ha reportado un error en el sistema.`,
+          type: 'new_bug'
+        }));
+        try {
+          await supabase.from('notifications').insert(notifications);
+        } catch (err) {
+          console.error("Error sending admin notifications:", err);
+        }
+      }
+
       toast.success('Reporte de error enviado exitosamente. ¡Gracias!');
       setBugDescription('');
       onClose();

@@ -10,6 +10,7 @@ import {
   AlertTriangle, Trash2, LogOut, Shield, Utensils, HelpCircle, Minus, Navigation, Moon, Sun, Check, User, Share2, MoreHorizontal, Building, ChevronDown, ChevronUp, Heart
 } from 'lucide-react';
 import UserProfile from '../components/UserProfile';
+import NotificationBell from '../components/NotificationBell';
 import MakePublicModal from '../components/modals/MakePublicModal';
 import ReportPinModal from '../components/modals/ReportPinModal';
 import SharedPinReceptionModal from '../components/modals/SharedPinReceptionModal';
@@ -535,9 +536,21 @@ export default function Dashboard() {
       if (error) throw error;
       if (data) {
         setUserPins(data);
+        // Guardar en caché si estamos bajando todos los pines (sin filtros activos)
+        if (!activeFilter && visibilityFilter === 'all') {
+          localStorage.setItem('navegaltos_cached_pins', JSON.stringify(data));
+        }
       }
     } catch (error) {
       console.error('Error fetching database pins:', error);
+      // Si falla la conexión, intentar cargar desde la caché local
+      if (!navigator.onLine) {
+        const cached = localStorage.getItem('navegaltos_cached_pins');
+        if (cached) {
+          setUserPins(JSON.parse(cached));
+          toast('Cargando pines guardados sin conexión.', { icon: '📶' });
+        }
+      }
     }
   };
 
@@ -704,6 +717,8 @@ export default function Dashboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {currentUser && <NotificationBell currentUser={currentUser} />}
 
           <button
             className="icon-btn"

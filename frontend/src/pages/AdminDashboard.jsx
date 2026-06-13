@@ -73,6 +73,17 @@ export default function AdminDashboard() {
   };
 
   const loadData = async () => {
+    // 1. Limpieza automática de pines expirados
+    try {
+      const now = new Date().toISOString();
+      await supabase.from('pins')
+        .delete()
+        .not('expires_at', 'is', null)
+        .lt('expires_at', now);
+    } catch (e) {
+      console.error('Error auto-cleaning pins:', e);
+    }
+
     // Load Pending Requests
     const { data: reqData, error: reqError } = await supabase
       .from('pin_requests')
@@ -131,6 +142,18 @@ export default function AdminDashboard() {
     setHistoryTickets(combinedHistory);
   };
 
+  const notifyUser = async (userId, title, message, type) => {
+    if (!userId) return;
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: userId,
+        title,
+        message,
+        type
+      }]);
+    } catch(e) { console.error('Error notifying user', e); }
+  };
+
   const handleApprove = async (request) => {
     try {
       // 1. Make the pin public
@@ -150,6 +173,9 @@ export default function AdminDashboard() {
       const { error: reqError } = await supabase.from('pin_requests').update({ status: 'approved' }).eq('id', request.id);
       if (reqError) throw reqError;
 
+      // 3. Notify user
+      await notifyUser(request.requester_id, '✅ Solicitud Aprobada', `Tu pin '${request.pins?.name}' ahora es público.`, 'request_approved');
+
       toast.success('Pin aprobado. Ya es visible al publico.');
       loadData();
     } catch (e) {
@@ -163,6 +189,8 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('pin_requests').update({ status: 'rejected' }).eq('id', request.id);
       if (error) throw error;
 
+      await notifyUser(request.requester_id, '❌ Solicitud Rechazada', `Tu solicitud para hacer público el pin '${request.pins?.name}' fue rechazada.`, 'request_rejected');
+
       toast.success('Solicitud rechazada. El pin sigue siendo privado.');
       loadData();
     } catch (e) {
@@ -172,6 +200,8 @@ export default function AdminDashboard() {
   };
 
   const displayedPins = publicPins.filter(pin => {
+    if (pin.expires_at && new Date(pin.expires_at) < new Date()) return false;
+    
     let pinMap = pin.map_id || 'main';
     let isCorrectMap = false;
     if (currentBuilding) {
@@ -201,6 +231,7 @@ export default function AdminDashboard() {
   });
 
   const filteredPublicPins = publicPins.filter(pin => {
+    if (pin.expires_at && new Date(pin.expires_at) < new Date()) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return pin.name?.toLowerCase().includes(q) || pin.category?.toLowerCase().includes(q);
@@ -375,6 +406,9 @@ export default function AdminDashboard() {
         toast.error('Error al resolver: ' + (error.message || JSON.stringify(error)));
         return;
       }
+      
+      await notifyUser(report.reporter_id, 'Reporte Resuelto', `Un administrador ha resuelto tu reporte sobre el pin '${report.pins?.name}'.`, 'report_resolved');
+      
       console.log('Reporte resuelto:', data);
       toast.success('Reporte marcado como resuelto.');
       loadData();
