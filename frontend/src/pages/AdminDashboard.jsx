@@ -7,6 +7,7 @@ import {
   Check, CheckCircle2, Edit2, Trash2, Search, ArrowLeft, BookOpen, Coffee, Car, Microscope, Clock, Move, EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import RejectRequestModal from '../components/modals/RejectRequestModal';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import rectoriaPB from '../assets/rectoria_pb.jpeg';
 import rectoriaN1 from '../assets/rectoria_n1.jpeg';
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
 
   // Edit State
   const [editingPin, setEditingPin] = useState(null);
+  const [rejectRequestData, setRejectRequestData] = useState(null);
   const [selectedPin, setSelectedPin] = useState(null);
 
   // Building State
@@ -184,10 +186,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (request) => {
-    const reason = window.prompt("Escribe el motivo del rechazo (opcional):", "No cumple con las normas de la comunidad");
-    if (reason === null) return;
-
+  const handleReject = async (request, reason) => {
     try {
       const { error } = await supabase.from('pin_requests').update({ status: 'rejected' }).eq('id', request.id);
       if (error) throw error;
@@ -221,6 +220,32 @@ export default function AdminDashboard() {
     }
     return true;
   });
+
+  // Inject selectedPin into displayedPins if it's missing (e.g., previewing a private requested pin)
+  if (selectedPin && !displayedPins.find(p => p.id === selectedPin.id)) {
+    let pinMap = selectedPin.map_id || 'main';
+    let isCorrectMap = false;
+    if (currentBuilding) {
+      isCorrectMap = (pinMap === currentBuilding && selectedPin.floor === selectedFloor);
+    } else {
+      isCorrectMap = (pinMap === 'main');
+    }
+    if (isCorrectMap) {
+      displayedPins.push(selectedPin);
+    }
+  }
+
+  const handleViewLocation = (pin) => {
+    setSelectedPin(pin);
+    if (pin.map_id && pin.map_id !== 'main') {
+      setCurrentBuilding(pin.map_id);
+      setSelectedFloor(pin.floor || 'PB');
+    } else {
+      setCurrentBuilding(null);
+    }
+    setIsZenMode(true);
+    if (window.innerWidth <= 768) setIsSidebarOpen(false);
+  };
 
   const filteredRequests = requests.filter(req => {
     if (!searchQuery) return true;
@@ -490,9 +515,9 @@ export default function AdminDashboard() {
 
         {isZenMode && (
           <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', background: '#003056', color: 'white', padding: '12px 24px', borderRadius: '24px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
-            <span style={{ fontWeight: 'bold' }}>Modo Relocalización: Haz clic en el mapa para mover el pin</span>
+            <span style={{ fontWeight: 'bold' }}>{movingPin ? 'Modo Relocalización: Haz clic en el mapa para mover el pin' : 'Modo Enfoque: Vista previa'}</span>
             <button onClick={() => { setIsZenMode(false); setMovingPin(null); setIsSidebarOpen(true); }} style={{ background: 'transparent', border: '1px solid white', color: 'white', padding: '4px 12px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Cancelar
+              {movingPin ? 'Cancelar' : 'Salir'}
             </button>
           </div>
         )}
@@ -501,10 +526,10 @@ export default function AdminDashboard() {
         <div
           className="admin-sidebar"
           style={{
-            transform: (isSidebarOpen && !isZenMode) ? 'translateX(0)' : 'translateX(-100%)',
+            transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 50,
-            boxShadow: (isSidebarOpen && !isZenMode) ? undefined : 'none'
+            boxShadow: isSidebarOpen ? undefined : 'none'
           }}
         >
 
@@ -628,9 +653,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="admin-card-actions" style={{ flexWrap: 'wrap' }}>
-                        <button style={{ flex: '1 1 45%', padding: '8px', background: '#f3f4f6', color: '#4b5563', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setSelectedPin(req.pins)}>Ver Ubicación</button>
+                        <button style={{ flex: '1 1 45%', padding: '8px', background: '#f3f4f6', color: '#4b5563', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleViewLocation(req.pins)}>Ver Ubicación</button>
                         <button style={{ flex: '1 1 45%', padding: '8px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setEditingRequest(req)}>Editar</button>
-                        <button className="btn-reject" style={{ flex: '1 1 45%' }} onClick={() => handleReject(req)}>Rechazar</button>
+                        <button className="btn-reject" style={{ flex: '1 1 45%' }} onClick={() => setRejectRequestData(req)}>Rechazar</button>
                         <button className="btn-approve" style={{ flex: '1 1 45%' }} onClick={() => handleApprove(req)}>Aprobar</button>
                       </div>
                     </div>
@@ -662,15 +687,7 @@ export default function AdminDashboard() {
                         <button style={{ flex: 1, padding: '8px', background: '#f3f4f6', color: '#4b5563', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => {
                           const pin = report.pins;
                           if (!pin) return;
-                          // Switch to the correct map first
-                          const mapId = pin.map_id || 'main';
-                          if (mapId !== 'main') {
-                            setCurrentBuilding(mapId);
-                            if (pin.floor) setSelectedFloor(pin.floor);
-                          } else {
-                            setCurrentBuilding(null);
-                          }
-                          setSelectedPin(pin);
+                          handleViewLocation(pin);
                         }}>Ver Pin</button>
                         <button className="btn-approve" onClick={() => handleResolveReport(report)}>Resuelto</button>
                       </div>
@@ -818,7 +835,14 @@ export default function AdminDashboard() {
                   <div
                     key={pin.id}
                     className={`map-pin ${selectedPin?.id === pin.id ? 'selected' : ''}`}
-                    style={{ left: `${pin.x || pin.x_coordinate}%`, top: `${pin.y || pin.y_coordinate}%`, borderColor: pin.color || '#333', boxShadow: `0 4px 12px ${pin.color || '#333'}40` }}
+                    style={{ 
+                      left: `${pin.x || pin.x_coordinate}%`, 
+                      top: `${pin.y || pin.y_coordinate}%`, 
+                      borderColor: pin.color || '#333', 
+                      boxShadow: `0 4px 12px ${pin.color || '#333'}40`,
+                      opacity: (isZenMode && pin.id !== selectedPin?.id && pin.id !== movingPin?.id) ? 0.3 : 1,
+                      pointerEvents: (isZenMode && pin.id !== selectedPin?.id && pin.id !== movingPin?.id) ? 'none' : 'auto'
+                    }}
                     title={pin.name || 'Pin'}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -895,7 +919,9 @@ export default function AdminDashboard() {
                               left: `${pin.x || pin.x_coordinate}%`,
                               top: `${pin.y || pin.y_coordinate}%`,
                               borderColor: pin.color || '#333',
-                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40`
+                              boxShadow: `0 4px 12px ${(pin.color || '#333')}40`,
+                              opacity: (isZenMode && pin.id !== selectedPin?.id && pin.id !== movingPin?.id) ? 0.3 : 1,
+                              pointerEvents: (isZenMode && pin.id !== selectedPin?.id && pin.id !== movingPin?.id) ? 'none' : 'auto'
                             }}
                             title={pin.name || 'Pin'}
                             onClick={(e) => {
@@ -1232,6 +1258,16 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      <RejectRequestModal
+        isOpen={!!rejectRequestData}
+        onClose={() => setRejectRequestData(null)}
+        requestName={rejectRequestData?.pins?.name || ''}
+        onConfirm={(reason) => {
+          handleReject(rejectRequestData, reason);
+          setRejectRequestData(null);
+        }}
+      />
     </div>
   );
 }

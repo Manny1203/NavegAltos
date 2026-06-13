@@ -603,10 +603,7 @@ body.dark .admin-color-circle.selected {
   width: calc(100% - 320px - 4%) !important;
 }
 
-.admin-zen-mode .admin-rectoria-modal {
-  left: 2% !important;
-  width: 96% !important;
-}
+
 
 @media (max-width: 768px) {
   .admin-sidebar-open .admin-rectoria-modal {
