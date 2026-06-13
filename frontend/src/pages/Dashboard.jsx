@@ -16,6 +16,7 @@ import ReportPinModal from '../components/modals/ReportPinModal';
 import SharedPinReceptionModal from '../components/modals/SharedPinReceptionModal';
 import ConfirmDeletePinModal from '../components/modals/ConfirmDeletePinModal';
 import BugReportModal from '../components/modals/BugReportModal';
+import LegalDisclaimerModal from '../components/modals/LegalDisclaimerModal';
 import mapImage from '../assets/mapaUniversidadVector.svg';
 import mapImageA from '../assets/mapaUniversidadVectorEdificioA.svg';
 import mapImageB from '../assets/mapaUniversidadVectorEdificioB.svg';
@@ -131,6 +132,20 @@ export default function Dashboard() {
   
   // Bug Report State
   const [showBugReportModal, setShowBugReportModal] = useState(false);
+
+  // Legal Disclaimer State
+  const [showLegalModal, setShowLegalModal] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('navegaltos_terms_accepted')) {
+      setShowLegalModal(true);
+    }
+  }, []);
+
+  const handleAcceptTerms = () => {
+    localStorage.setItem('navegaltos_terms_accepted', 'true');
+    setShowLegalModal(false);
+  };
 
   const [userPins, setUserPins] = useState([]);
 
@@ -1942,6 +1957,11 @@ export default function Dashboard() {
             setSelectedPin(null);
           }
         }}
+      />
+
+      <LegalDisclaimerModal 
+        isOpen={showLegalModal} 
+        onAccept={handleAcceptTerms} 
       />
     </div>
   );

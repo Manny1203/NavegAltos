@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, LogIn, Download, Eye, EyeOff, Info, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import LegalDisclaimerModal from '../components/modals/LegalDisclaimerModal';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export default function LoginPage() {
 
   const [showInstitutionalWarning, setShowInstitutionalWarning] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
     const hasDismissed = localStorage.getItem('hide_institutional_warning');
@@ -227,9 +230,13 @@ export default function LoginPage() {
           Entrar como Invitado
         </button>
 
-        <div className="auth-footer">
+        <div className="auth-footer" style={{ marginBottom: '12px' }}>
           ¿No tienes cuenta? <Link to="/register" className="auth-link">Regístrate aquí</Link>
         </div>
+
+        <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4', marginBottom: '16px', padding: '0 10px' }}>
+          Al iniciar sesión o continuar como invitado, aceptas nuestros <strong style={{cursor: 'pointer', color: 'var(--text-heading)', textDecoration: 'underline'}} onClick={() => setShowTermsModal(true)}>Términos y Condiciones</strong> y confirmas que entiendes nuestro manejo de datos.
+        </p>
 
         {deferredPrompt && (
           <div style={{ marginTop: '16px' }}>
@@ -319,6 +326,12 @@ export default function LoginPage() {
           </div>
         </div>
       )}
+
+      <LegalDisclaimerModal 
+        isOpen={showTermsModal} 
+        onAccept={() => setShowTermsModal(false)} 
+        buttonText="De acuerdo"
+      />
     </>
   );
 }
