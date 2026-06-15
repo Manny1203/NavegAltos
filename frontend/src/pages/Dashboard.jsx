@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Joyride, STATUS } from 'react-joyride';
 import Fuse from 'fuse.js';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -88,6 +89,53 @@ const parseDays = (days) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
+  // Interactive Tutorial State
+  const [runTutorial, setRunTutorial] = useState(false);
+  const [tutorialSteps] = useState([
+    {
+      target: '.tutorial-menu-btn',
+      content: 'Bienvenido a NavegAltos. Este es el menú principal donde puedes ver tu perfil y opciones adicionales.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tutorial-search-bar',
+      content: 'Usa esta barra para buscar rápidamente aulas, laboratorios, baños y otros lugares en el campus.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tutorial-add-pin',
+      content: '¿No encuentras lo que buscas? Añade tu propio pin personalizado (necesitas iniciar sesión).',
+      disableBeacon: true,
+    },
+    {
+      target: '.tutorial-right-sidebar',
+      content: 'Usa estos botones rápidos para ver capas de edificios, pines públicos, tu ubicación por GPS y tus pines privados.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tutorial-filters',
+      content: 'También puedes usar estos filtros rápidos para encontrar lugares por categoría.',
+      disableBeacon: true,
+    },
+    {
+      target: '.tutorial-rectoria-btn',
+      content: 'Toca aquí para explorar el interior de Rectoría y ver sus plantas.',
+      disableBeacon: true,
+    }
+  ]);
+
+
+
+  const handleJoyrideCallback = (data) => {
+    const { status } = data;
+    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
+    if (finishedStatuses.includes(status)) {
+      setRunTutorial(false);
+      localStorage.setItem('navegaltos_tutorial_completed', 'true');
+    }
+  };
+
   const [activeFilter, setActiveFilter] = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState('all'); // 'all', 'public', 'private'
   const [showModal, setShowModal] = useState(false);
@@ -139,12 +187,21 @@ export default function Dashboard() {
   useEffect(() => {
     if (!localStorage.getItem('navegaltos_terms_accepted')) {
       setShowLegalModal(true);
+    } else {
+      const hasSeenTutorial = localStorage.getItem('navegaltos_tutorial_completed');
+      if (!hasSeenTutorial) {
+        setRunTutorial(true);
+      }
     }
   }, []);
 
   const handleAcceptTerms = () => {
     localStorage.setItem('navegaltos_terms_accepted', 'true');
     setShowLegalModal(false);
+    const hasSeenTutorial = localStorage.getItem('navegaltos_tutorial_completed');
+    if (!hasSeenTutorial) {
+      setRunTutorial(true);
+    }
   };
 
   const [userPins, setUserPins] = useState([]);
@@ -704,6 +761,31 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
+      <Joyride
+        steps={tutorialSteps}
+        run={runTutorial}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        disableOverlayClose={true}
+        disableScrolling={true}
+        callback={handleJoyrideCallback}
+        styles={{
+          options: {
+            primaryColor: '#E25E24',
+            zIndex: 10000,
+          },
+          beaconInner: { backgroundColor: '#E25E24' },
+          beaconOuter: { borderColor: '#E25E24', backgroundColor: 'rgba(226, 94, 36, 0.2)' }
+        }}
+        locale={{
+          back: 'Atrás',
+          close: 'Cerrar',
+          last: 'Finalizar',
+          next: 'Siguiente',
+          skip: 'Saltar',
+        }}
+      />
 
       {/* Out of bounds warning */}
       {isOutOfBounds && (
@@ -718,11 +800,11 @@ export default function Dashboard() {
       {/* Search Bar (formerly below navbar) */}
       {!routeEditMode && (
         <div className="floating-ui top-bar">
-          <button className="icon-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
+          <button className="icon-btn tutorial-menu-btn" onClick={() => { setShowMenuSidebar(!showMenuSidebar); setSelectedPin(null); }}>
             <Menu size={24} />
           </button>
 
-          <div className="search-bar-container" style={{ cursor: 'text' }}>
+          <div className="search-bar-container tutorial-search-bar" style={{ cursor: 'text' }}>
             <Search size={20} color="#9ca3af" />
             <input
               type="text"
@@ -736,7 +818,7 @@ export default function Dashboard() {
           {currentUser && <NotificationBell currentUser={currentUser} />}
 
           <button
-            className="icon-btn"
+            className="icon-btn tutorial-add-pin"
             onClick={toggleMarkerMode}
             style={{ background: markerMode ? '#E25E24' : '', color: markerMode ? 'white' : '' }}
           >
@@ -836,6 +918,22 @@ export default function Dashboard() {
                   </button>
                 </>
               )}
+
+              {/* Botón de Tutorial */}
+              <button
+                className="menu-sidebar-item"
+                onClick={() => {
+                  setShowMenuSidebar(false);
+                  setRunTutorial(true);
+                }}
+                style={{ marginBottom: '8px' }}
+              >
+                <HelpCircle size={20} color="#10b981" />
+                <div className="menu-item-text">
+                  <span className="menu-item-label">Tutorial</span>
+                  <span className="menu-item-desc">Ver la guía de la aplicación</span>
+                </div>
+              </button>
 
               <button
                 className="menu-sidebar-item text-danger"
@@ -1066,7 +1164,7 @@ export default function Dashboard() {
       {/* Right Sidebar and Bottom Filters */}
       {!routeEditMode && (
         <>
-          <div className="floating-ui right-sidebar">
+          <div className="floating-ui right-sidebar tutorial-right-sidebar">
             <div style={{ position: 'relative' }}>
               <button
                 className={`icon-btn sidebar-btn ${showMapMenu ? 'sidebar-active active-filter' : ''}`}
@@ -1144,7 +1242,7 @@ export default function Dashboard() {
           </div>
 
           {/* Bottom Filters */}
-          <div className="floating-ui bottom-filters">
+          <div className="floating-ui bottom-filters tutorial-filters">
             {filters.map(filter => (
               <button
                 key={filter.id}
@@ -1397,6 +1495,7 @@ export default function Dashboard() {
                   {/* Botón estático para Rectoría */}
                   {!currentBuilding && (
                     <button
+                      className="tutorial-rectoria-btn"
                       style={{
                         position: 'absolute',
                         left: '53.957%',
