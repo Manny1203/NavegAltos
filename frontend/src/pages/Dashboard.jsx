@@ -190,6 +190,7 @@ export default function Dashboard() {
     } else {
       const hasSeenTutorial = localStorage.getItem('navegaltos_tutorial_completed');
       if (!hasSeenTutorial) {
+        localStorage.setItem('navegaltos_tutorial_completed', 'true');
         setRunTutorial(true);
       }
     }
@@ -200,6 +201,7 @@ export default function Dashboard() {
     setShowLegalModal(false);
     const hasSeenTutorial = localStorage.getItem('navegaltos_tutorial_completed');
     if (!hasSeenTutorial) {
+      localStorage.setItem('navegaltos_tutorial_completed', 'true');
       setRunTutorial(true);
     }
   };
