@@ -550,6 +550,19 @@ export default function Dashboard() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
+      const validEmailRegex = /^[a-zA-Z0-9._-]+@(alumnos\.|academicos\.|administracion\.)?udg\.mx$/;
+      if (!validEmailRegex.test(session.user.email)) {
+        await supabase.auth.signOut();
+        localStorage.setItem('guest_mode', 'true');
+        toast.error('Solo se admiten correos institucionales UDG. Entrando en Modo Invitado.', {
+          duration: 6000,
+          style: { minWidth: '300px' }
+        });
+        setCurrentUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
       setCurrentUser(session.user);
       // Check if admin
       const { data } = await supabase.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
