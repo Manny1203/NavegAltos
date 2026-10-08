@@ -1,0 +1,33 @@
+name: Supabase Keep-Alive
+
+# Se ejecuta cada 3 días a las 12:00 UTC (Supabase pausa proyectos gratuitos tras 7 días de inactividad)
+on:
+  schedule:
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: # Permite probarlo manualmente con un botón en GitHub
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        env:
+          INPUT_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          INPUT_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          URL="${INPUT_URL:-https://uxuivgazwybtfrelwaxc.supabase.co}"
+          KEY="${INPUT_KEY:-sb_publishable_8yXULLzgA_RflwtyUKOfmw_5HKxDno8}"
+
+          echo "Enviando ping a Supabase..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "$URL/rest/v1/pins?select=id&limit=1")
+
+          echo "Respuesta HTTP: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Ping exitoso. La base de datos sigue activa."
+          else
+            echo "Error o respuesta inesperada: $HTTP_STATUS"
+            exit 1
+          fi
