@@ -397,15 +397,30 @@ export default function Dashboard() {
           }
         }
       } else if (sharedPinId) {
-        const { data } = await supabase.from('shared_pins').select('*').eq('id', sharedPinId).maybeSingle();
-        if (data) {
-          const createdDate = new Date(data.created_at);
+        // Consulta segura mediante RPC get_shared_pin (evita scraping masivo)
+        let sharedRecord = null;
+        try {
+          const { data: rpcData, error: rpcError } = await supabase.rpc('get_shared_pin', { pin_id: sharedPinId });
+          if (!rpcError && rpcData) {
+            sharedRecord = rpcData;
+          }
+        } catch (e) {
+          console.warn('RPC get_shared_pin no disponible aún, usando fallback...', e);
+        }
+
+        if (!sharedRecord) {
+          const { data } = await supabase.from('shared_pins').select('*').eq('id', sharedPinId).maybeSingle();
+          sharedRecord = data;
+        }
+
+        if (sharedRecord) {
+          const createdDate = new Date(sharedRecord.created_at);
           const diffDays = Math.ceil(Math.abs(new Date() - createdDate) / (1000 * 60 * 60 * 24));
 
           if (diffDays > 7) {
             toast.error('Este enlace compartido ha caducado (tiene más de 7 días).');
           } else {
-            setSharedPinData(data.pin_data);
+            setSharedPinData(sharedRecord.pin_data);
             setShowSharedPinModal(true);
           }
         } else {
