@@ -397,6 +397,7 @@ export default function AdminDashboard() {
         .update({
           name: editingPin.name,
           category: editingPin.category,
+          owner: editingPin.owner || null,
           description: editingPin.description,
           icon: editingPin.icon,
           color: editingPin.color,
@@ -1164,6 +1165,16 @@ export default function AdminDashboard() {
                 <option value="edificios">Edificios</option>
                 <option value="otros">Otros</option>
               </select>
+            </div>
+
+            <div className="action-form-group" style={{ marginBottom: '16px' }}>
+              <label>PROPIETARIO / RESPONSABLE</label>
+              <input
+                type="text"
+                placeholder="Ej. Dr. Juan Pérez / Coordinación"
+                value={editingPin.owner || ''}
+                onChange={(e) => setEditingPin({ ...editingPin, owner: e.target.value })}
+              />
             </div>
 
             <div className="action-form-group" style={{ marginBottom: '16px' }}>
