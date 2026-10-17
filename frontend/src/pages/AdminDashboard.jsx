@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
@@ -34,10 +34,24 @@ const parseDays = (days) => {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('requests'); // 'requests', 'public_pins'
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'requests'); // 'requests', 'public_pins', 'reports', 'bugs', 'history'
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['requests', 'public_pins', 'reports', 'bugs', 'history'].includes(tabParam)) {
+      setActiveTab(tabParam);
+      setIsSidebarOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
 
   // Data states
   const [requests, setRequests] = useState([]);
@@ -536,7 +550,7 @@ export default function AdminDashboard() {
           <div className="admin-sidebar-menu">
             <button
               className={`admin-nav-item ${activeTab === 'requests' ? 'active' : ''}`}
-              onClick={() => setActiveTab('requests')}
+              onClick={() => handleTabChange('requests')}
             >
               <AlertTriangle size={18} />
               <span>Solicitudes</span>
@@ -544,14 +558,14 @@ export default function AdminDashboard() {
             </button>
             <button
               className={`admin-nav-item ${activeTab === 'public_pins' ? 'active' : ''}`}
-              onClick={() => setActiveTab('public_pins')}
+              onClick={() => handleTabChange('public_pins')}
             >
               <MapPin size={18} />
               <span>Pines Públicos</span>
             </button>
             <button
               className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reports')}
+              onClick={() => handleTabChange('reports')}
             >
               <Flag size={18} />
               <span>Reportes</span>
@@ -559,7 +573,7 @@ export default function AdminDashboard() {
             </button>
             <button
               className={`admin-nav-item ${activeTab === 'bugs' ? 'active' : ''}`}
-              onClick={() => setActiveTab('bugs')}
+              onClick={() => handleTabChange('bugs')}
             >
               <AlertTriangle size={18} />
               <span>Errores (Bugs)</span>
@@ -567,7 +581,7 @@ export default function AdminDashboard() {
             </button>
             <button
               className={`admin-nav-item ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveTab('history')}
+              onClick={() => handleTabChange('history')}
             >
               <FileText size={18} />
               <span>Historial</span>
